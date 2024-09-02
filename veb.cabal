@@ -1,0 +1,19 @@
+cabal-version:       3.4
+name:                veb
+version:             0.1.0.0
+license:             MIT
+license-file:        LICENSE
+author:              Shayne Fletcher
+maintainer:          shaynefletcher@shaynefletcher.org
+build-type:          Simple
+extra-source-files:  README.md
+
+common base
+  default-language: GHC2024
+  ghc-options: -Wall -Werror
+  build-depends: base >= 4.20.0.0
+
+executable silly-3.1-executable
+  import: base
+  main-is:             Silly.hs
+  hs-source-dirs:      src

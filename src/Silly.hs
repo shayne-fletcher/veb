@@ -14,7 +14,10 @@ marked (Leaf True) = True
 marked (Node _ _ True) = True
 marked _ = False
 
--- Huet zipper http://www.st.cs.uni-sb.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf
+-- Huet zipper. See
+-- http://www.st.cs.uni-sb.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf
+-- and https://wiki.haskell.org/Zipper
+
 data Ctx = Top | L Ctx Tree | R Tree Ctx
   deriving (Show)
 

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 import Control.Exception (assert)
 import Data.Bits
 import Debug.Trace
@@ -70,11 +71,14 @@ make h =
             (r, c2) = make_rec (level - 1)
 
 path :: Int -> Int -> (Tree -> Loc)
-path entry h = path_rec top entry 0
+path entry h = path_rec top (assert(entry >= 0 && entry < 2^h) entry) 0
   where
     path_rec :: (Tree -> Loc) -> Int -> Int -> (Tree -> Loc)
     path_rec acc n i =
-      if i == h then acc else path_rec (dir n i h . acc) n (i + 1)
+       if i == h then
+        acc
+      else
+        path_rec (dir n i h . acc) n (i + 1)
     -- In `dir x i n`, `x` has length `n` bits, `i` is the bit under
     -- consideration. e.g. when n = 4, x can represent values 0..15.
     -- If x = 13 (0b1101) say, we compute `right . right . left .
@@ -89,22 +93,26 @@ path entry h = path_rec top entry 0
         k = n - 1
         mask = 1 `shiftL` k
 
-inorder :: (a -> Tree -> a) -> a -> Tree -> a
-inorder f acc n@(Node l r _) =
-  let acc' = inorder f acc l
-      acc'' = f acc' n
-      acc''' = inorder f acc'' r
+postorder :: (a -> Tree -> a) -> a -> Tree -> a
+postorder f acc n@(Node l r _) =
+  let acc' = postorder f acc l
+      acc'' = postorder f acc' r
+      acc''' = f acc'' n
   in acc'''
-inorder f acc n@(Leaf _) = f acc n
+postorder f acc n@(Leaf _) = f acc n
 
 main :: IO ()
 main = do
-  let h = 16
+  let h = 3
       t = make h
-      t' = fst . upmost . mark $ path 3 h t
-      leaves = inorder f [] t'
-  putStrLn $ "n = " <> show (length leaves)
-  putStrLn $ "root " <> if marked t then "" else "not " <> "marked"
+      n = 2^h
+      val = 6
+      t' = fst . upmost . mark $ path val h t
+      leaves = reverse $ postorder f [] t'
+      len = length leaves
+  putStrLn $ "n = " <> assert (len == n) (show n)
+  putStrLn $ "root t' " <> if marked t' then "" else "not " <> "marked"
+  putStrLn $ show leaves
   where
     f acc n = case n of Node {} -> acc; Leaf {} -> n : acc
 

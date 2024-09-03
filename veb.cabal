@@ -10,7 +10,7 @@ extra-source-files:  README.md
 
 common base
   default-language: GHC2024
-  ghc-options: -Wall -Werror
+  ghc-options: -Wall -Werror -fno-ignore-asserts
   build-depends: base >= 4.20.0.0
 
 executable silly-3.1-executable

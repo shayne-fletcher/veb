@@ -103,15 +103,17 @@ postorder f acc n@(Leaf _) = f acc n
 
 main :: IO ()
 main = do
-  let h = 3
+  let h = 16
       t = make h
       n = 2^h
-      val = 6
+      val = 65534
       t' = fst . upmost . mark $ path val h t
       leaves = reverse $ postorder f [] t'
       len = length leaves
+  assert (getMark (leaves!!val)) (pure ())
   putStrLn $ "n = " <> assert (len == n) (show n)
   putStrLn $ "root t' " <> if marked t' then "" else "not " <> "marked"
+  putStrLn $ show t'
   putStrLn $ show leaves
   where
     f acc n = case n of Node {} -> acc; Leaf {} -> n : acc

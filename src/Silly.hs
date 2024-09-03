@@ -89,19 +89,20 @@ path entry h = path_rec top entry 0
         k = n - 1
         mask = 1 `shiftL` k
 
-fold :: (a -> Tree -> a) -> a -> Tree -> a
-fold f acc n@(Node l r _) =
-  let acc' = fold f acc l
-      acc'' = fold f acc' r
-  in f acc'' n
-fold f acc n@(Leaf _) = f acc n
+inorder :: (a -> Tree -> a) -> a -> Tree -> a
+inorder f acc n@(Node l r _) =
+  let acc' = inorder f acc l
+      acc'' = f acc' n
+      acc''' = inorder f acc'' r
+  in acc'''
+inorder f acc n@(Leaf _) = f acc n
 
 main :: IO ()
 main = do
   let h = 16
       t = make h
       t' = fst . upmost . mark $ path 3 h t
-      leaves = fold f [] t'
+      leaves = inorder f [] t'
   putStrLn $ "n = " <> show (length leaves)
   putStrLn $ "root " <> if marked t then "" else "not " <> "marked"
   where
@@ -140,9 +141,9 @@ make h = make_rec (h + 1) Nothing
                 }
           in n
 
-fold :: (a -> Node -> a) -> a -> Node -> a
-fold f acc n@Node { parent = _, left = l, right = r, marked = _} = f (fold f (fold f acc l) r) n
-fold f acc n@Nil = f acc n
+inorder :: (a -> Node -> a) -> a -> Node -> a
+inorder f acc n@Node { parent = _, left = l, right = r, marked = _} = f (inorder f (inorder f acc l) r) n
+inorder f acc n@Nil = f acc n
 
 numEdges n Node { parent = Nothing } = 0 :: Int
 numEdges n Node { parent = Just p } = numEdges n p + 1
@@ -150,7 +151,7 @@ numEdges n Node { parent = Just p } = numEdges n p + 1
 main = do
   let k = 4
       t = make k
-      leaves = fold f [] t
+      leaves = inorder f [] t
   putStrLn ("number leaves: " <> show (length leaves))
   putStrLn ("num edges of 15: " <> show (numEdges 0 (leaves!!12)))
 

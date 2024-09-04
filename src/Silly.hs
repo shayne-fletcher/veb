@@ -1,10 +1,10 @@
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 import Control.Exception (assert)
 import Data.Bits
+import Data.Maybe
 import Debug.Trace
 
 data Tree = Leaf Bool | Node Tree Tree Bool
-  deriving (Show)
+  deriving (Show, Eq)
 
 height :: Tree -> Int
 height (Leaf _) = 0
@@ -20,7 +20,7 @@ marked _ = False
 -- and https://wiki.haskell.org/Zipper
 
 data Ctx = Top | L Ctx Tree | R Tree Ctx
-  deriving (Show)
+  deriving (Show, Eq)
 
 type Loc = (Tree, Ctx)
 
@@ -93,6 +93,14 @@ path entry h = path_rec top (assert(entry >= 0 && entry < 2^h) entry) 0
         k = n - 1
         mask = 1 `shiftL` k
 
+toNum :: Loc -> Int
+toNum l = foldl' (\acc (c, i) -> acc + c * 2^i) 0 (zip (toBits l) ([0..] :: [Int]))
+  where
+    toBits :: Loc -> [Int]
+    toBits (_, Top) = []
+    toBits loc@(_, R _ _) = 1 : toBits (up loc)
+    toBits loc@(_, L _ _) = 0 : toBits (up loc)
+
 postorder :: (a -> Tree -> a) -> a -> Tree -> a
 postorder f acc n@(Node l r _) =
   let acc' = postorder f acc l
@@ -100,6 +108,25 @@ postorder f acc n@(Node l r _) =
       acc''' = f acc'' n
   in acc'''
 postorder f acc n@(Leaf _) = f acc n
+
+--
+
+type Set = Tree
+
+empty :: Set -> Bool
+empty (Node _ _ False) = True
+empty (Leaf False) = True
+empty _ = False
+
+minElem :: Set -> Maybe Loc
+minElem = minElemLoc . top
+  where
+    minElemLoc :: Loc -> Maybe Loc
+    minElemLoc (Node _ _ False, _) = Nothing
+    minElemLoc loc@(Node l _ True, _) | not (empty l) = minElemLoc (left loc)
+    minElemLoc loc@(Node _ _ True, _) = minElemLoc (right loc)
+    minElemLoc loc@(Leaf True, _) = Just loc
+    minElemLoc _ = error "unexpected case"
 
 main :: IO ()
 main = do
@@ -112,9 +139,11 @@ main = do
       len = length leaves
   assert (getMark (leaves!!val)) (pure ())
   putStrLn $ "n = " <> assert (len == n) (show n)
-  putStrLn $ "root t' " <> if marked t' then "" else "not " <> "marked"
-  putStrLn $ show t'
-  putStrLn $ show leaves
+  putStrLn $ "root t' " <> if marked t' then "is marked" else "is not " <> "marked"
+  -- putStrLn $ show t'
+  -- putStrLn $ show leaves
+  assert(fromJust (minElem t') == path val h t')(pure ())
+  putStrLn $ "min = " <> show (toNum (fromJust (minElem t')))
   where
     f acc n = case n of Node {} -> acc; Leaf {} -> n : acc
 

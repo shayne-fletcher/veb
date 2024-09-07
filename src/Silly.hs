@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
 import Control.Exception (assert)
 import Data.Bits
 import Data.Maybe
@@ -58,8 +60,12 @@ mark (Node l r _, c) = (Node l r True, c)
 make :: Int -> Tree
 make h =
   let (t, n) = make_rec (Debug.Trace.trace ("h = " <> show h) h)
-  in assert (height t == h) (assert (n == 2^(h + 1) - 1)
-    (Debug.Trace.trace ("tree of " <> show n <> " nodes") t))
+   in assert
+        (height t == h)
+        ( assert
+            (n == 2 ^ (h + 1) - 1)
+            (Debug.Trace.trace ("tree of " <> show n <> " nodes") t)
+        )
   where
     make_rec :: Int -> (Tree, Int)
     make_rec level =
@@ -71,14 +77,15 @@ make h =
             (r, c2) = make_rec (level - 1)
 
 path :: Int -> Int -> (Tree -> Loc)
-path entry h = path_rec top (assert(entry >= 0 && entry < 2^h) entry) 0
+path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
   where
-    path_rec :: (Tree -> Loc) -> Int -> Int -> (Tree -> Loc)
-    path_rec acc n i =
-       if i == h then
-        acc
-      else
-        path_rec (dir n i h . acc) n (i + 1)
+    pathRec :: (Tree -> Loc) -> Int -> Int -> (Tree -> Loc)
+    pathRec acc n i =
+      if i == h
+        then
+          acc
+        else
+          pathRec (dir n i h . acc) n (i + 1)
     -- In `dir x i n`, `x` has length `n` bits, `i` is the bit under
     -- consideration. e.g. when n = 4, x can represent values 0..15.
     -- If x = 13 (0b1101) say, we compute `right . right . left .
@@ -94,7 +101,7 @@ path entry h = path_rec top (assert(entry >= 0 && entry < 2^h) entry) 0
         mask = 1 `shiftL` k
 
 toNum :: Loc -> Int
-toNum l = foldl' (\acc (c, i) -> acc + c * 2^i) 0 (zip (toBits l) ([0..] :: [Int]))
+toNum l = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
   where
     toBits :: Loc -> [Int]
     toBits (_, Top) = []
@@ -103,10 +110,34 @@ toNum l = foldl' (\acc (c, i) -> acc + c * 2^i) 0 (zip (toBits l) ([0..] :: [Int
 
 postorder :: (t -> Loc -> t) -> t -> Loc -> t
 postorder f acc loc@(Leaf _, _) = f acc loc
-postorder f acc loc =
-  let acc' = postorder f acc (left loc)
-      acc'' = postorder f acc' (right loc)
-  in f acc'' loc
+postorder f acc loc = f acc'' loc
+  where
+    acc' = postorder f acc (left loc)
+    acc'' = postorder f acc' (right loc)
+
+harvest :: [Loc] -> Loc -> [Loc]
+harvest ns (Node {}, _) = ns
+harvest ns n = n : ns
+
+harvestLeft :: Loc -> [Loc]
+harvestLeft = harvestLeftRec []
+  where
+    harvestLeftRec :: [Loc] -> Loc -> [Loc]
+    harvestLeftRec ns (_, Top) = ns
+    harvestLeftRec ns loc@(_, L _ _) = harvestLeftRec ns (up loc)
+    harvestLeftRec ns loc@(_, R _ _) = harvestLeftRec (postorder harvest ns (left parent)) parent
+      where
+        parent = up loc
+
+harvestRight :: Loc -> [Loc]
+harvestRight = harvestRightRec []
+  where
+    harvestRightRec :: [Loc] -> Loc -> [Loc]
+    harvestRightRec ns (_, Top) = ns
+    harvestRightRec ns loc@(_, R _ _) = harvestRightRec ns (up loc)
+    harvestRightRec ns loc@(_, L _ _) = harvestRightRec (postorder harvest ns (right parent)) parent
+      where
+        parent = up loc
 
 --
 
@@ -131,20 +162,24 @@ main :: IO ()
 main = do
   let h = 16
       t = make h
-      n = 2^h
+      n = 2 ^ h
       val = 65534
       t' = fst . upmost . mark $ path val h t
       leaves = reverse $ postorder f [] (top t')
       len = length leaves
-  assert (getMark (fst (leaves!!val))) (pure ())
+  assert (getMark (fst (leaves !! val))) (pure ())
   putStrLn $ "n = " <> assert (len == n) (show n)
   putStrLn $ "root t' " <> if marked t' then "is marked" else "is not " <> "marked"
   -- putStrLn $ show t'
+
   print (map toNum leaves)
-  assert(fromJust (minElem t') == path val h t')(pure ())
+  assert (fromJust (minElem t') == path val h t') (pure ())
   putStrLn $ "min = " <> show (toNum (fromJust (minElem t')))
+
+  print (map toNum (harvestLeft (path 5 h t')))
+  print (map toNum (harvestRight (path 65533 h t')))
   where
-    f acc n = case n of (Node {} , _) -> acc; (Leaf {}, _) -> n : acc
+    f acc n = case n of (Node {}, _) -> acc; (Leaf {}, _) -> n : acc
 
 {-
 {-# LANGUAGE RecordWildCards #-}

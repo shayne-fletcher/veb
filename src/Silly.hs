@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 import Control.Exception (assert)
 import Data.Bits
 import Data.Maybe
@@ -180,58 +178,3 @@ main = do
   print (map toNum (harvestRight (path 65533 h t')))
   where
     f acc n = case n of (Node {}, _) -> acc; (Leaf {}, _) -> n : acc
-
-{-
-{-# LANGUAGE RecordWildCards #-}
-
-import Data.List
-import Data.Maybe
-import Debug.Trace
-
-data Node = Nil
-  | Node {
-      parent:: Maybe Node,
-      left :: Node,
-      right :: Node,
-      marked :: Bool
-    }
-  deriving(Eq)
-
-make :: Int -> Node
-make h = make_rec (h + 1) Nothing
-  where
-    make_rec :: Int -> Maybe Node -> Node
-    make_rec level p =
-      case level of
-        0 -> Nil
-        _ ->
-          let n =
-                Node {
-                  parent = p,
-                  left = make_rec (level - 1) (Just n),
-                  right = make_rec (level - 1) (Just n),
-                  marked = False
-                }
-          in n
-
-inorder :: (a -> Node -> a) -> a -> Node -> a
-inorder f acc n@Node { parent = _, left = l, right = r, marked = _} = f (inorder f (inorder f acc l) r) n
-inorder f acc n@Nil = f acc n
-
-numEdges n Node { parent = Nothing } = 0 :: Int
-numEdges n Node { parent = Just p } = numEdges n p + 1
-
-main = do
-  let k = 4
-      t = make k
-      leaves = inorder f [] t
-  putStrLn ("number leaves: " <> show (length leaves))
-  putStrLn ("num edges of 15: " <> show (numEdges 0 (leaves!!12)))
-
-  pure ()
-  where
-    f acc n =
-      case n of
-        Node { parent=_, left = Nil, right = Nil } -> n : acc
-        _ -> acc
--}

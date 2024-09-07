@@ -101,13 +101,12 @@ toNum l = foldl' (\acc (c, i) -> acc + c * 2^i) 0 (zip (toBits l) ([0..] :: [Int
     toBits loc@(_, R _ _) = 1 : toBits (up loc)
     toBits loc@(_, L _ _) = 0 : toBits (up loc)
 
-postorder :: (a -> Tree -> a) -> a -> Tree -> a
-postorder f acc n@(Node l r _) =
-  let acc' = postorder f acc l
-      acc'' = postorder f acc' r
-      acc''' = f acc'' n
-  in acc'''
-postorder f acc n@(Leaf _) = f acc n
+postorder :: (t -> Loc -> t) -> t -> Loc -> t
+postorder f acc loc@(Leaf _, _) = f acc loc
+postorder f acc loc =
+  let acc' = postorder f acc (left loc)
+      acc'' = postorder f acc' (right loc)
+  in f acc'' loc
 
 --
 
@@ -135,17 +134,17 @@ main = do
       n = 2^h
       val = 65534
       t' = fst . upmost . mark $ path val h t
-      leaves = reverse $ postorder f [] t'
+      leaves = reverse $ postorder f [] (top t')
       len = length leaves
-  assert (getMark (leaves!!val)) (pure ())
+  assert (getMark (fst (leaves!!val))) (pure ())
   putStrLn $ "n = " <> assert (len == n) (show n)
   putStrLn $ "root t' " <> if marked t' then "is marked" else "is not " <> "marked"
   -- putStrLn $ show t'
-  -- putStrLn $ show leaves
+  print (map toNum leaves)
   assert(fromJust (minElem t') == path val h t')(pure ())
   putStrLn $ "min = " <> show (toNum (fromJust (minElem t')))
   where
-    f acc n = case n of Node {} -> acc; Leaf {} -> n : acc
+    f acc n = case n of (Node {} , _) -> acc; (Leaf {}, _) -> n : acc
 
 {-
 {-# LANGUAGE RecordWildCards #-}

@@ -16,12 +16,23 @@ common base
 common lib
   import: base
 
+common test
+  import: lib
+  build-depends:
+    tasty >= 1.2, tasty-hunit >= 0.10.0,
+    veb
+
 library
   import: lib
   hs-source-dirs:
     src
   exposed-modules:
     Silly_3_1
+
+test-suite silly-3.1-test
+  import: test
+  type: exitcode-stdio-1.0
+  main-is: test/silly-3.1/Test.hs
 
 executable silly-3.1-executable
   import: base

@@ -2,17 +2,30 @@ cabal-version: 3.4
 name: veb
 version: 0.1.0.0
 license: MIT
-license-file: LICENSE
+license-file: LICENSE.md
 author: Shayne Fletcher
 maintainer: shaynefletcher@shaynefletcher.org
 build-type: Simple
 extra-source-files: README.md
 tested-with: GHC == 9.10.1
+description: Data structure research based on "Preserving order in a forest..."
+synopsis: Data structures
+category: Simple
 
+source-repository head
+  type: git
+  location: https://github.com/shayne-fletcher/veb.git
+
+flag warnings_as_errors
+  default: False
+  manual: True
+  description: Enable warnings as errors
 common base
   default-language: GHC2024
-  ghc-options: -Wall -Werror -fno-ignore-asserts
-  build-depends: base >= 4.20.0.0
+  ghc-options: -Wall -fno-ignore-asserts
+  if flag(warnings_as_errors)
+    ghc-options: -Werror
+  build-depends: base >= 4.20.0.0 && < 5
 
 common lib
   import: base

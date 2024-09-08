@@ -7,6 +7,7 @@ author: Shayne Fletcher
 maintainer: shaynefletcher@shaynefletcher.org
 build-type: Simple
 extra-source-files: README.md
+tested-with: GHC == 9.10.1
 
 common base
   default-language: GHC2024

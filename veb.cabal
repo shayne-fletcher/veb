@@ -20,7 +20,7 @@ common lib
 common test
   import: lib
   build-depends:
-    tasty >= 1.2, tasty-hunit >= 0.10.0,
+    tasty >= 1.2, tasty-hunit >= 0.10.0, random >= 1.2, containers >= 0.7,
     veb
 
 library

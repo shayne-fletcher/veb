@@ -1,4 +1,34 @@
-module Silly_3_1 where
+module Silly_3_1 (
+    Tree (..)
+  , height
+  , getMark
+  , marked
+  --
+  , Ctx (..)
+  , Loc
+  , left
+  , right
+  , top
+  , up
+  , upmost
+  --
+  , make
+  , mark
+  , modify
+  , leaves
+  , insert
+  , path
+  , toNum
+  , postorder
+  , harvest
+  , harvestLeft
+  , harvestRight
+  --
+  , Set
+  , empty
+  , minElem
+
+) where
 
 import Control.Exception (assert)
 import Data.Bits
@@ -11,22 +41,19 @@ height (Leaf _) = 0
 height (Node l _ _) = height l + 1
 
 marked :: Tree -> Bool
-marked (Leaf True) = True
-marked (Node _ _ True) = True
-marked _ = False
-
--- Huet zipper. See
--- http://www.st.cs.uni-sb.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf
--- and https://wiki.haskell.org/Zipper
-
-data Ctx = Top | L Ctx Tree | R Tree Ctx
-  deriving (Show, Eq)
-
-type Loc = (Tree, Ctx)
+marked = getMark
 
 getMark :: Tree -> Bool
 getMark (Leaf m) = m
 getMark (Node _ _ m) = m
+
+-- Huet zipper. See
+-- http://www.st.cs.uni-sb.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf
+-- and https://wiki.haskell.org/Zipper
+data Ctx = Top | L Ctx Tree | R Tree Ctx
+  deriving (Show, Eq)
+
+type Loc = (Tree, Ctx)
 
 left :: Loc -> Loc
 left (Node l r _, c) = (l, L c r)
@@ -48,8 +75,8 @@ upmost :: Loc -> Loc
 upmost loc@(_, Top) = loc
 upmost loc = upmost (up loc)
 
-_modify :: Loc -> (Tree -> Tree) -> Loc
-_modify (t, c) f = (f t, c)
+modify :: Loc -> (Tree -> Tree) -> Loc
+modify (t, c) f = (f t, c)
 
 mark :: Loc -> Loc
 mark (Leaf _, c) = (Leaf True, c)

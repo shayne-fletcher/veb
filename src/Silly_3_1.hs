@@ -142,12 +142,13 @@ path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
         mask = 1 `shiftL` k
 
 toNum :: Loc -> Int
-toNum l = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
+toNum l@(Leaf _, _) = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
   where
     toBits :: Loc -> [Int]
     toBits (_, Top) = []
     toBits loc@(_, R _ _) = 1 : toBits (up loc)
     toBits loc@(_, L _ _) = 0 : toBits (up loc)
+toNum _ = error "toNum called on non-leaf"
 
 postorder :: (t -> Loc -> t) -> t -> Loc -> t
 postorder f acc loc@(Leaf _, _) = f acc loc

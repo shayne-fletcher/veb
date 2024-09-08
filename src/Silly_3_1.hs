@@ -55,6 +55,14 @@ mark :: Loc -> Loc
 mark (Leaf _, c) = (Leaf True, c)
 mark (Node l r _, c) = (Node l r True, c)
 
+leaves :: Tree -> [Loc]
+leaves t = reverse $ postorder f [] (top t)
+  where
+    f acc n = case n of (Node {}, _) -> acc; (Leaf {}, _) -> n : acc
+
+insert :: Int -> Tree -> Int -> Tree
+insert h t x = fst . upmost . mark $ path x h t
+
 make :: Int -> Tree
 make h =
   let (t, n) = make_rec h

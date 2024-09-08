@@ -2,7 +2,6 @@ module Silly_3_1 where
 
 import Control.Exception (assert)
 import Data.Bits
-import Debug.Trace
 
 data Tree = Leaf Bool | Node Tree Tree Bool
   deriving (Show, Eq)
@@ -58,12 +57,12 @@ mark (Node l r _, c) = (Node l r True, c)
 
 make :: Int -> Tree
 make h =
-  let (t, n) = make_rec (Debug.Trace.trace ("h = " <> show h) h)
+  let (t, n) = make_rec h
    in assert
         (height t == h)
         ( assert
             (n == 2 ^ (h + 1) - 1)
-            (Debug.Trace.trace ("tree of " <> show n <> " nodes") t)
+            t
         )
   where
     make_rec :: Int -> (Tree, Int)

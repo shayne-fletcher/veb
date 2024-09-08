@@ -18,7 +18,8 @@ tests =
     " All tests"
     [ testCase "make" $ forM_ [0 .. 16] makeTest,
       testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] markTest,
-      testCase "toNum" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] toNumTest
+      testCase "toNum" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] toNumTest,
+      testCase "empty" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] emptyTest
     ]
 
 makeTest :: Int -> IO ()
@@ -66,3 +67,10 @@ toNumTest h = do
       ls = leaves t
       ns = map toNum ls :: [Int]
   assertEqual "leave values match their indices" ns ([0 .. n - 1] :: [Int])
+
+emptyTest :: Int -> Assertion
+emptyTest h = do
+  let t = make (Control.Exception.assert (h >= 0) h)
+      t' = insert h t 0
+  assertBool "empty (1)" $ empty t
+  assertBool "empty (2)" $ not (empty t')

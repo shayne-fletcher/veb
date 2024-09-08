@@ -14,6 +14,7 @@ module Silly_3_1 (
   --
   , make
   , mark
+  , unmark
   , modify
   , leaves
   , insert
@@ -82,13 +83,20 @@ mark :: Loc -> Loc
 mark (Leaf _, c) = (Leaf True, c)
 mark (Node l r _, c) = (Node l r True, c)
 
+unmark :: Loc -> Loc
+unmark (Leaf _, c) = (Leaf False, c)
+unmark (Node l r _, c) = (Node l r False, c)
+
 leaves :: Tree -> [Loc]
 leaves t = reverse $ postorder f [] (top t)
   where
     f acc n = case n of (Node {}, _) -> acc; (Leaf {}, _) -> n : acc
 
 insert :: Int -> Tree -> Int -> Tree
-insert h t x = fst . upmost . mark $ path x h t
+insert h t x =
+  fst . upmost . mark $
+     path (assert (x >= 0 && x < 2^h) x)
+     (assert (h >= 0) h) t
 
 make :: Int -> Tree
 make h =

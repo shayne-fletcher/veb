@@ -17,7 +17,7 @@ tests =
   testGroup
     " All tests"
     [ testCase "make" $ forM_ [0 .. 16] test_make,
-      testCase "mark" $ forM_ [2^i | i <- [0..4] :: [Int]] test_mark
+      testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] test_mark
     ]
 
 test_make :: Int -> IO ()
@@ -44,8 +44,8 @@ test_mark h = do
   assertBool "expected marks" $
     and [getMark (fst (at ls i n)) | i <- is]
   assertBool "no unexpected marks" $
-    not . or $ [getMark $ fst (at ls i n) | i <- [0 .. n - 1], i `notElem` is]
-
+    not . or $
+      [getMark $ fst (at ls i n) | i <- [0 .. n - 1], i `notElem` is]
   where
     at :: [Loc] -> Int -> Int -> Loc
     at ls i n = ls !! Control.Exception.assert (i >= 0 && i < n) i

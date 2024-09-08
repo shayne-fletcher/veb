@@ -1,4 +1,34 @@
-module Silly_3_1 where
+module Silly_3_1 (
+    Tree (..)
+  , height
+  , marked
+  , getMark
+  --
+  , Ctx (..)
+  , Loc
+  , left
+  , right
+  , top
+  , up
+  , upmost
+  --
+  , make
+  , mark
+  , modify
+  , leaves
+  , insert
+  , path
+  , toNum
+  , postorder
+  , harvest
+  , harvestLeft
+  , harvestRight
+  --
+  , Set
+  , empty
+  , minElem
+
+) where
 
 import Control.Exception (assert)
 import Data.Bits
@@ -48,8 +78,8 @@ upmost :: Loc -> Loc
 upmost loc@(_, Top) = loc
 upmost loc = upmost (up loc)
 
-_modify :: Loc -> (Tree -> Tree) -> Loc
-_modify (t, c) f = (f t, c)
+modify :: Loc -> (Tree -> Tree) -> Loc
+modify (t, c) f = (f t, c)
 
 mark :: Loc -> Loc
 mark (Leaf _, c) = (Leaf True, c)

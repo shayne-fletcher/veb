@@ -16,12 +16,12 @@ tests :: TestTree
 tests =
   testGroup
     " All tests"
-    [ testCase "make" $ forM_ [0 .. 16] test_make,
-      testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] test_mark
+    [ testCase "make" $ forM_ [0 .. 16] makeTest,
+      testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] markTest
     ]
 
-test_make :: Int -> IO ()
-test_make h = do
+makeTest :: Int -> IO ()
+makeTest h = do
   let t = make (Control.Exception.assert (h >= 0) h)
       n = 2 ^ h
       ls = postorder f [] (top t)
@@ -31,8 +31,8 @@ test_make h = do
   where
     f acc n = case n of (Node {}, _) -> acc; (Leaf {}, _) -> n : acc
 
-test_mark :: Int -> Assertion
-test_mark h = do
+markTest :: Int -> Assertion
+markTest h = do
   let n = 2 ^ h :: Int
       t0 = make (Control.Exception.assert (h >= 0) h)
       k = h

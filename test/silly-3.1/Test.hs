@@ -1,6 +1,6 @@
 import Control.Exception
 import Control.Monad (forM_, replicateM)
-import Data.Set hiding (foldl', insert)
+import Data.Set qualified
 import Silly_3_1
 import System.Environment
 import System.Random (randomRIO)
@@ -17,7 +17,8 @@ tests =
   testGroup
     " All tests"
     [ testCase "make" $ forM_ [0 .. 16] makeTest,
-      testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] markTest
+      testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] markTest,
+      testCase "toNum" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] toNumTest
     ]
 
 makeTest :: Int -> IO ()
@@ -57,3 +58,11 @@ markTest h = do
       if Data.Set.size is == k
         then pure $ Data.Set.toList is
         else selectK n k
+
+toNumTest :: Int -> Assertion
+toNumTest h = do
+  let t = make (Control.Exception.assert (h >= 0) h)
+      n = 2 ^ h
+      ls = leaves t
+      ns = map toNum ls :: [Int]
+  assertEqual "leave values match their indices" ns ([0 .. n - 1] :: [Int])

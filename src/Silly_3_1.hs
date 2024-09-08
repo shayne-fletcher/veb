@@ -12,18 +12,20 @@ module Silly_3_1 (
   , up
   , upmost
   --
-  , make
-  , mark
-  , unmark
-  , modify
-  , leaves
-  , insert
-  , path
-  , toNum
-  , postorder
+  , Order (..)
   , harvest
   , harvestLeft
   , harvestRight
+  , insert
+  , leaves
+  , make
+  , mark
+  , modify
+  , path
+  , postorder
+  , toNum
+  , unmark
+  , visit
   --
   , Set
   , empty
@@ -150,12 +152,43 @@ toNum l@(Leaf _, _) = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) 
     toBits loc@(_, L _ _) = 0 : toBits (up loc)
 toNum _ = error "toNum called on non-leaf"
 
+--
+
+data Order = Pre | In | Post
+
+visit :: Order -> (a -> Loc -> a) -> a -> Loc -> a
+visit Post = postorder
+visit Pre = preorder
+visit In = inorder
+
+preorder :: (t -> Loc -> t) -> t -> Loc -> t
+preorder f acc loc@(Leaf _, _) = f acc loc
+preorder f acc loc =
+  let
+    acc' = f acc loc
+    acc'' = preorder f acc' (left loc)
+    acc''' = preorder f acc'' (right loc)
+  in acc'''
+
+inorder :: (t -> Loc -> t) -> t -> Loc -> t
+inorder f acc loc@(Leaf _, _) = f acc loc
+inorder f acc loc =
+  let
+    acc' = preorder f acc (left loc)
+    acc'' = f acc' loc
+    acc''' = preorder f acc'' (right loc)
+  in acc'''
+
 postorder :: (t -> Loc -> t) -> t -> Loc -> t
 postorder f acc loc@(Leaf _, _) = f acc loc
-postorder f acc loc = f acc'' loc
-  where
+postorder f acc loc =
+  let
     acc' = postorder f acc (left loc)
     acc'' = postorder f acc' (right loc)
+    acc''' = f acc'' loc
+  in acc'''
+
+--
 
 harvest :: [Loc] -> Loc -> [Loc]
 harvest ns (Node {}, _) = ns

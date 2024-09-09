@@ -16,6 +16,16 @@ jobs:
       with:
         path: '["src", "test"]'
         fail-on: warning
+  ormolu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/run-ormolu@v16
+        with:
+          pattern: |
+            src/*.hs
+            test/*.hs
+          mode: check
   generate-matrix:
     name: "Generate matrix from cabal"
     outputs:

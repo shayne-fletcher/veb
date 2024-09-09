@@ -1,5 +1,6 @@
 import Control.Exception
 import Control.Monad (forM_, replicateM)
+import Data.Maybe
 import Data.Set qualified
 import Silly_3_1
 import System.Environment
@@ -19,7 +20,9 @@ tests =
     [ testCase "make" $ forM_ [0 .. 16] makeTest,
       testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] markTest,
       testCase "toNum" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] toNumTest,
-      testCase "empty" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] emptyTest
+      testCase "empty" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] emptyTest,
+      testCase "minElem (1)" $ minElemTest 2 [1, 2],
+      testCase "minElem (2)" $ minElemTest 12 [4095, 2048, 1024, 512]
     ]
 
 makeTest :: Int -> IO ()
@@ -72,5 +75,12 @@ emptyTest :: Int -> Assertion
 emptyTest h = do
   let t = make (Control.Exception.assert (h >= 0) h)
       t' = insert h t 0
-  assertBool "empty (1)" $ empty t
-  assertBool "empty (2)" $ not (empty t')
+  assertBool "empty" $ empty t
+  assertBool "not empty" $ not (empty t')
+
+minElemTest :: Int -> [Int] -> IO ()
+minElemTest h ls = do
+  let n = 2 ^ h :: Int
+      t0 = make (Control.Exception.assert (h >= 0) h)
+      t = foldl' (insert h) t0 (Control.Exception.assert (and [l >= 0 && l < n | l <- ls]) ls)
+  assertEqual "min element matches expected value" (toNum . Data.Maybe.fromJust . minElem $ t) (minimum ls)

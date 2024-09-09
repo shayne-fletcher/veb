@@ -1,6 +1,5 @@
 import Control.Exception
 import Data.Maybe
-
 import Silly_3_1
 
 main :: IO ()

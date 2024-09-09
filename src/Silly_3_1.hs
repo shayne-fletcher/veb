@@ -1,37 +1,37 @@
-module Silly_3_1 (
-    Tree (..)
-  , height
-  , getMark
-  , marked
-  --
-  , Ctx (..)
-  , Loc
-  , left
-  , right
-  , top
-  , up
-  , upmost
-  --
-  , Order (..)
-  , harvest
-  , harvestLeft
-  , harvestRight
-  , insert
-  , leaves
-  , make
-  , mark
-  , modify
-  , path
-  , postorder
-  , toNum
-  , unmark
-  , visit
-  --
-  , Set
-  , empty
-  , minElem
-
-) where
+module Silly_3_1
+  ( Tree (..),
+    height,
+    getMark,
+    marked,
+    --
+    Ctx (..),
+    Loc,
+    left,
+    right,
+    top,
+    up,
+    upmost,
+    --
+    Order (..),
+    harvest,
+    harvestLeft,
+    harvestRight,
+    insert,
+    leaves,
+    make,
+    mark,
+    modify,
+    path,
+    postorder,
+    toNum,
+    unmark,
+    visit,
+    --
+    Set,
+    empty,
+    minElem,
+  )
+where
 
 import Control.Exception (assert)
 import Data.Bits
@@ -97,8 +97,10 @@ leaves t = reverse $ postorder f [] (top t)
 insert :: Int -> Tree -> Int -> Tree
 insert h t x =
   fst . upmost . mark $
-     path (assert (x >= 0 && x < 2^h) x)
-     (assert (h >= 0) h) t
+    path
+      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (h >= 0) h)
+      t
 
 make :: Int -> Tree
 make h =
@@ -164,29 +166,26 @@ visit In = inorder
 preorder :: (t -> Loc -> t) -> t -> Loc -> t
 preorder f acc loc@(Leaf _, _) = f acc loc
 preorder f acc loc =
-  let
-    acc' = f acc loc
-    acc'' = preorder f acc' (left loc)
-    acc''' = preorder f acc'' (right loc)
-  in acc'''
+  let acc' = f acc loc
+      acc'' = preorder f acc' (left loc)
+      acc''' = preorder f acc'' (right loc)
+   in acc'''
 
 inorder :: (t -> Loc -> t) -> t -> Loc -> t
 inorder f acc loc@(Leaf _, _) = f acc loc
 inorder f acc loc =
-  let
-    acc' = preorder f acc (left loc)
-    acc'' = f acc' loc
-    acc''' = preorder f acc'' (right loc)
-  in acc'''
+  let acc' = preorder f acc (left loc)
+      acc'' = f acc' loc
+      acc''' = preorder f acc'' (right loc)
+   in acc'''
 
 postorder :: (t -> Loc -> t) -> t -> Loc -> t
 postorder f acc loc@(Leaf _, _) = f acc loc
 postorder f acc loc =
-  let
-    acc' = postorder f acc (left loc)
-    acc'' = postorder f acc' (right loc)
-    acc''' = f acc'' loc
-  in acc'''
+  let acc' = postorder f acc (left loc)
+      acc'' = postorder f acc' (right loc)
+      acc''' = f acc'' loc
+   in acc'''
 
 --
 

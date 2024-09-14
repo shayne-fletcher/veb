@@ -17,6 +17,7 @@ module Silly_3_1
     harvestLeft,
     harvestRight,
     insert,
+    delete,
     leaves,
     make,
     mark,
@@ -28,8 +29,11 @@ module Silly_3_1
     visit,
     --
     Set,
-    empty,
-    minElem,
+    setEmpty, -- S = ∅
+    setInsert, -- S ∪ {i}
+    setDelete, -- S \ {j}
+    setMinElem, -- Compute the least element of S
+    setMaxElem, -- Compute the largest element of S
   )
 where
 
@@ -97,6 +101,14 @@ leaves t = reverse $ postorder f [] (top t)
 insert :: Int -> Tree -> Int -> Tree
 insert h t x =
   fst . upmost . mark $
+    path
+      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (h >= 0) h)
+      t
+
+delete :: Int -> Tree -> Int -> Tree
+delete h t x =
+  fst . upmost . unmark $
     path
       (assert (x >= 0 && x < 2 ^ h) x)
       (assert (h >= 0) h)
@@ -217,17 +229,33 @@ harvestRight = harvestRightRec []
 
 type Set = Tree
 
-empty :: Set -> Bool
-empty (Node _ _ False) = True
-empty (Leaf False) = True
-empty _ = False
+setEmpty :: Set -> Bool
+setEmpty (Node _ _ False) = True
+setEmpty (Leaf False) = True
+setEmpty _ = False
 
-minElem :: Set -> Maybe Loc
-minElem = minElemLoc . top
+setMinElem :: Set -> Maybe Loc
+setMinElem = minElemLoc . top
   where
     minElemLoc :: Loc -> Maybe Loc
     minElemLoc (Node _ _ False, _) = Nothing
-    minElemLoc loc@(Node l _ True, _) | not (empty l) = minElemLoc (left loc)
+    minElemLoc loc@(Node l _ True, _) | not (setEmpty l) = minElemLoc (left loc)
     minElemLoc loc@(Node _ _ True, _) = minElemLoc (right loc)
     minElemLoc loc@(Leaf True, _) = Just loc
     minElemLoc _ = error "unexpected case"
+
+setMaxElem :: Set -> Maybe Loc
+setMaxElem = maxElemLoc . top
+  where
+    maxElemLoc :: Loc -> Maybe Loc
+    maxElemLoc (Node _ _ False, _) = Nothing
+    maxElemLoc loc@(Node _ r True, _) | not (setEmpty r) = maxElemLoc (right loc)
+    maxElemLoc loc@(Node _ _ True, _) = maxElemLoc (left loc)
+    maxElemLoc loc@(Leaf True, _) = Just loc
+    maxElemLoc _ = error "unexpected case"
+
+setInsert :: Int -> Set -> Int -> Set
+setInsert = insert
+
+setDelete :: Int -> Set -> Int -> Set
+setDelete = delete

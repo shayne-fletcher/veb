@@ -17,8 +17,8 @@ main = do
   -- putStrLn $ show t'
 
   print (map toNum ls)
-  assert (fromJust (minElem t') == path val h t') (pure ())
-  putStrLn $ "min = " <> show (toNum (fromJust (minElem t')))
+  assert (fromJust (setMinElem t') == path val h t') (pure ())
+  putStrLn $ "min = " <> show (toNum (fromJust (setMinElem t')))
 
   print (map toNum (harvestLeft (path 5 h t')))
   print (map toNum (harvestRight (path 65533 h t')))

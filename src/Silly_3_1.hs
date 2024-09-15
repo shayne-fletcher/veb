@@ -30,10 +30,12 @@ module Silly_3_1
     --
     Set,
     setEmpty, -- S = ∅
-    setInsert, -- S ∪ {i}
     setDelete, -- S \ {j}
-    setMinElem, -- Compute the least element of S
-    setMaxElem, -- Compute the largest element of S
+    setInsert, -- S ∪ {i}
+    setMax, -- Compute the largest element of S
+    setMin, -- Compute the least element of S
+    setPred, -- Compute the largest element of S < j
+    setSucc, -- Compute the least element of S > j
   )
 where
 
@@ -203,7 +205,8 @@ postorder f acc loc =
 
 harvest :: [Loc] -> Loc -> [Loc]
 harvest ns (Node {}, _) = ns
-harvest ns n = n : ns
+harvest ns (Leaf False, _) = ns
+harvest ns n@(Leaf True, _) = n : ns
 
 harvestLeft :: Loc -> [Loc]
 harvestLeft = harvestLeftRec []
@@ -234,25 +237,47 @@ setEmpty (Node _ _ False) = True
 setEmpty (Leaf False) = True
 setEmpty _ = False
 
-setMinElem :: Set -> Maybe Loc
-setMinElem = minElemLoc . top
-  where
-    minElemLoc :: Loc -> Maybe Loc
-    minElemLoc (Node _ _ False, _) = Nothing
-    minElemLoc loc@(Node l _ True, _) | not (setEmpty l) = minElemLoc (left loc)
-    minElemLoc loc@(Node _ _ True, _) = minElemLoc (right loc)
-    minElemLoc loc@(Leaf True, _) = Just loc
-    minElemLoc _ = error "unexpected case"
+setMin :: Set -> Maybe Loc
+setMin = minLoc . top
 
-setMaxElem :: Set -> Maybe Loc
-setMaxElem = maxElemLoc . top
+minLoc :: Loc -> Maybe Loc
+minLoc (Node _ _ False, _) = Nothing
+minLoc loc@(Node l _ True, _) | not (setEmpty l) = minLoc (left loc)
+minLoc loc@(Node _ _ True, _) = minLoc (right loc)
+minLoc loc@(Leaf True, _) = Just loc
+minLoc _ = error "unexpected case"
+
+setMax :: Set -> Maybe Loc
+setMax = maxLoc . top
+
+maxLoc :: Loc -> Maybe Loc
+maxLoc (Node _ _ False, _) = Nothing
+maxLoc loc@(Node _ r True, _) | not (setEmpty r) = maxLoc (right loc)
+maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
+maxLoc loc@(Leaf True, _) = Just loc
+maxLoc (Leaf False, _) = Nothing
+
+setPred :: Loc -> Maybe Loc
+setPred = setPredLoc
   where
-    maxElemLoc :: Loc -> Maybe Loc
-    maxElemLoc (Node _ _ False, _) = Nothing
-    maxElemLoc loc@(Node _ r True, _) | not (setEmpty r) = maxElemLoc (right loc)
-    maxElemLoc loc@(Node _ _ True, _) = maxElemLoc (left loc)
-    maxElemLoc loc@(Leaf True, _) = Just loc
-    maxElemLoc _ = error "unexpected case"
+    setPredLoc :: Loc -> Maybe Loc
+    setPredLoc (_, Top) = Nothing
+    setPredLoc loc@(_, R _ _) =
+      case maxLoc (left (up loc)) of
+        r@(Just _) -> r
+        Nothing -> setPredLoc (up loc)
+    setPredLoc loc@(_, L _ _) = setPredLoc (up loc)
+
+setSucc :: Loc -> Maybe Loc
+setSucc = setSuccLoc
+  where
+    setSuccLoc :: Loc -> Maybe Loc
+    setSuccLoc (_, Top) = Nothing
+    setSuccLoc loc@(_, L _ _) =
+      case minLoc (right (up loc)) of
+        r@(Just _) -> r
+        Nothing -> setSuccLoc (up loc)
+    setSuccLoc loc@(_, R _ _) = setSuccLoc (up loc)
 
 setInsert :: Int -> Set -> Int -> Set
 setInsert = insert

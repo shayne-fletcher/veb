@@ -36,6 +36,8 @@ module Silly_3_1
     setMin, -- Compute the least element of S
     setPred, -- Compute the largest element of S < j
     setSucc, -- Compute the least element of S > j
+    setExtractMin, -- Delete the least element from S
+    setExtractMax, -- Delete the largest element from S
   )
 where
 
@@ -284,3 +286,9 @@ setInsert = insert
 
 setDelete :: Int -> Set -> Int -> Set
 setDelete = delete
+
+setExtractMin :: Set -> Set
+setExtractMin t = maybe t (fst . upmost . unmark) (setMin t)
+
+setExtractMax :: Set -> Set
+setExtractMax t = maybe t (fst . upmost . unmark) (setMax t)

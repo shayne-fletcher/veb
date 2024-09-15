@@ -1,6 +1,7 @@
 import Control.Exception
 import Control.Monad (forM_, replicateM)
 import Data.Bifunctor (bimap)
+import Data.List qualified
 import Data.Maybe
 import Data.Set qualified
 import Silly_3_1
@@ -23,15 +24,10 @@ tests =
       testCase "mark" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] markTest,
       testCase "toNum" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] toNumTest,
       testCase "setEmpty" $ forM_ [2 ^ i | i <- [0 .. 4] :: [Int]] setEmptyTest,
-      testCase "setMin (1)" $ setMinTest 2 [1, 2],
-      testCase "setMin (2)" $ setMinTest 12 [4095, 2048, 1024, 512],
-      testCase "setMax (1)" $ setMaxTest 2 [1, 2],
-      testCase "setMax (2)" $ setMaxTest 12 [4095, 2048, 1024, 512],
-      testCase "setPredSuccTest (1)" $ setPredSuccTest 1 [] 1 (Nothing, Nothing),
-      testCase "setPredSuccTest (2)" $ setPredSuccTest 1 [0] 1 (Just 0, Nothing),
-      testCase "setPredSuccTest (3)" $ setPredSuccTest 3 [0, 1, 2, 3, 4, 5, 6, 7] 4 (Just 3, Just 5),
-      testCase "setPredSuccTest (4)" $ setPredSuccTest 3 [0, 1, 2, 3, 4, 5, 6, 7] 5 (Just 4, Just 6),
-      testCase "setPredSuccTest (5)" $ setPredSuccTest 3 [0, 1, 2, 3, 4, 5, 6, 7] 0 (Nothing, Just 1)
+      testCase "setMin" $ sequence_ [setMinTest 2 [1, 2], setMinTest 12 [4095, 2048, 1024, 512]],
+      testCase "setMax" $ sequence_ [setMaxTest 2 [1, 2], setMaxTest 12 [4095, 2048, 1024, 512]],
+      testCase "setPredSuccTest" $ sequence_ [setPredSuccTest 1 [] 1 (Nothing, Nothing), setPredSuccTest 1 [0] 1 (Just 0, Nothing), setPredSuccTest 3 [0, 1, 2, 3, 4, 5, 6, 7] 4 (Just 3, Just 5), setPredSuccTest 3 [0, 1, 2, 3, 4, 5, 6, 7] 5 (Just 4, Just 6)],
+      testCase "setPredSuccTest" $ sequence_ [setPredSuccTest 3 [0, 1, 2, 3, 4, 5, 6, 7] 0 (Nothing, Just 1), setExtractMinTest 12 [4095, 2048, 1024, 512], setExtractMaxTest 12 [4095, 2048, 1024, 512]]
     ]
 
 makeTest :: Int -> IO ()
@@ -118,3 +114,19 @@ setPredSuccTest h ls j expect = do
   assertEqual "pred/succ match expectations" expect (bimap maybeToNum maybeToNum (setPred loc, setSucc loc))
   where
     maybeToNum = (toNum <$>)
+
+setExtractMinTest :: Int -> [Int] -> IO ()
+setExtractMinTest h ls = do
+  let n = 2 ^ h :: Int
+      t0 = make (Control.Exception.assert (h >= 0) h)
+      t = foldl' (setInsert h) t0 (Control.Exception.assert (and [l >= 0 && l < n | l <- ls]) ls)
+      t' = setExtractMin t
+  assertEqual "min element matches expected value" (minimum (Data.List.delete (minimum ls) ls)) (toNum . Data.Maybe.fromJust . setMin $ t')
+
+setExtractMaxTest :: Int -> [Int] -> IO ()
+setExtractMaxTest h ls = do
+  let n = 2 ^ h :: Int
+      t0 = make (Control.Exception.assert (h >= 0) h)
+      t = foldl' (setInsert h) t0 (Control.Exception.assert (and [l >= 0 && l < n | l <- ls]) ls)
+      t' = setExtractMax t
+  assertEqual "max element matches expected value" (maximum (Data.List.delete (maximum ls) ls)) (toNum . Data.Maybe.fromJust . setMax $ t')

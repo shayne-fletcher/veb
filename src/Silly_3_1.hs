@@ -1,35 +1,45 @@
-module Silly_3_1 (
-    Tree (..)
-  , height
-  , getMark
-  , marked
-  --
-  , Ctx (..)
-  , Loc
-  , left
-  , right
-  , top
-  , up
-  , upmost
-  --
-  , make
-  , mark
-  , unmark
-  , modify
-  , leaves
-  , insert
-  , path
-  , toNum
-  , postorder
-  , harvest
-  , harvestLeft
-  , harvestRight
-  --
-  , Set
-  , empty
-  , minElem
-
-) where
+module Silly_3_1
+  ( Tree (..),
+    height,
+    getMark,
+    marked,
+    --
+    Ctx (..),
+    Loc,
+    left,
+    right,
+    top,
+    up,
+    upmost,
+    --
+    Order (..),
+    harvest,
+    harvestLeft,
+    harvestRight,
+    insert,
+    delete,
+    leaves,
+    make,
+    mark,
+    modify,
+    path,
+    postorder,
+    toNum,
+    unmark,
+    visit,
+    --
+    Set,
+    setEmpty, -- S = ∅
+    setDelete, -- S \ {j}
+    setInsert, -- S ∪ {i}
+    setMax, -- Compute the largest element of S
+    setMin, -- Compute the least element of S
+    setPred, -- Compute the largest element of S < j
+    setSucc, -- Compute the least element of S > j
+    setExtractMin, -- Delete the least element from S
+    setExtractMax, -- Delete the largest element from S
+  )
+where
 
 import Control.Exception (assert)
 import Data.Bits
@@ -95,8 +105,18 @@ leaves t = reverse $ postorder f [] (top t)
 insert :: Int -> Tree -> Int -> Tree
 insert h t x =
   fst . upmost . mark $
-     path (assert (x >= 0 && x < 2^h) x)
-     (assert (h >= 0) h) t
+    path
+      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (h >= 0) h)
+      t
+
+delete :: Int -> Tree -> Int -> Tree
+delete h t x =
+  fst . upmost . unmark $
+    path
+      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (h >= 0) h)
+      t
 
 make :: Int -> Tree
 make h =
@@ -142,23 +162,53 @@ path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
         mask = 1 `shiftL` k
 
 toNum :: Loc -> Int
-toNum l = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
+toNum l@(Leaf _, _) = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
   where
     toBits :: Loc -> [Int]
     toBits (_, Top) = []
     toBits loc@(_, R _ _) = 1 : toBits (up loc)
     toBits loc@(_, L _ _) = 0 : toBits (up loc)
+toNum _ = error "toNum called on non-leaf"
+
+--
+
+data Order = Pre | In | Post
+
+visit :: Order -> (a -> Loc -> a) -> a -> Loc -> a
+visit Post = postorder
+visit Pre = preorder
+visit In = inorder
+
+preorder :: (t -> Loc -> t) -> t -> Loc -> t
+preorder f acc loc@(Leaf _, _) = f acc loc
+preorder f acc loc =
+  let acc' = f acc loc
+      acc'' = preorder f acc' (left loc)
+      acc''' = preorder f acc'' (right loc)
+   in acc'''
+
+inorder :: (t -> Loc -> t) -> t -> Loc -> t
+inorder f acc loc@(Leaf _, _) = f acc loc
+inorder f acc loc =
+  let acc' = preorder f acc (left loc)
+      acc'' = f acc' loc
+      acc''' = preorder f acc'' (right loc)
+   in acc'''
 
 postorder :: (t -> Loc -> t) -> t -> Loc -> t
 postorder f acc loc@(Leaf _, _) = f acc loc
-postorder f acc loc = f acc'' loc
-  where
-    acc' = postorder f acc (left loc)
-    acc'' = postorder f acc' (right loc)
+postorder f acc loc =
+  let acc' = postorder f acc (left loc)
+      acc'' = postorder f acc' (right loc)
+      acc''' = f acc'' loc
+   in acc'''
+
+--
 
 harvest :: [Loc] -> Loc -> [Loc]
 harvest ns (Node {}, _) = ns
-harvest ns n = n : ns
+harvest ns (Leaf False, _) = ns
+harvest ns n@(Leaf True, _) = n : ns
 
 harvestLeft :: Loc -> [Loc]
 harvestLeft = harvestLeftRec []
@@ -180,21 +230,65 @@ harvestRight = harvestRightRec []
       where
         parent = up loc
 
+minLoc :: Loc -> Maybe Loc
+minLoc (Node _ _ False, _) = Nothing
+minLoc loc@(Node l _ True, _) | not (setEmpty l) = minLoc (left loc)
+minLoc loc@(Node _ _ True, _) = minLoc (right loc)
+minLoc loc@(Leaf True, _) = Just loc
+minLoc (Leaf False, _) = Nothing
+
+maxLoc :: Loc -> Maybe Loc
+maxLoc (Node _ _ False, _) = Nothing
+maxLoc loc@(Node _ r True, _) | not (setEmpty r) = maxLoc (right loc)
+maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
+maxLoc loc@(Leaf True, _) = Just loc
+maxLoc (Leaf False, _) = Nothing
+
 --
 
 type Set = Tree
 
-empty :: Set -> Bool
-empty (Node _ _ False) = True
-empty (Leaf False) = True
-empty _ = False
+setEmpty :: Set -> Bool
+setEmpty (Node _ _ False) = True
+setEmpty (Leaf False) = True
+setEmpty _ = False
 
-minElem :: Set -> Maybe Loc
-minElem = minElemLoc . top
+setMin :: Set -> Maybe Loc
+setMin = minLoc . top
+
+setMax :: Set -> Maybe Loc
+setMax = maxLoc . top
+
+setPred :: Loc -> Maybe Loc
+setPred = setPredLoc
   where
-    minElemLoc :: Loc -> Maybe Loc
-    minElemLoc (Node _ _ False, _) = Nothing
-    minElemLoc loc@(Node l _ True, _) | not (empty l) = minElemLoc (left loc)
-    minElemLoc loc@(Node _ _ True, _) = minElemLoc (right loc)
-    minElemLoc loc@(Leaf True, _) = Just loc
-    minElemLoc _ = error "unexpected case"
+    setPredLoc :: Loc -> Maybe Loc
+    setPredLoc (_, Top) = Nothing
+    setPredLoc loc@(_, R _ _) =
+      case maxLoc (left (up loc)) of
+        r@(Just _) -> r
+        Nothing -> setPredLoc (up loc)
+    setPredLoc loc@(_, L _ _) = setPredLoc (up loc)
+
+setSucc :: Loc -> Maybe Loc
+setSucc = setSuccLoc
+  where
+    setSuccLoc :: Loc -> Maybe Loc
+    setSuccLoc (_, Top) = Nothing
+    setSuccLoc loc@(_, L _ _) =
+      case minLoc (right (up loc)) of
+        r@(Just _) -> r
+        Nothing -> setSuccLoc (up loc)
+    setSuccLoc loc@(_, R _ _) = setSuccLoc (up loc)
+
+setInsert :: Int -> Set -> Int -> Set
+setInsert = insert
+
+setDelete :: Int -> Set -> Int -> Set
+setDelete = delete
+
+setExtractMin :: Set -> Set
+setExtractMin t = maybe t (fst . upmost . unmark) (setMin t)
+
+setExtractMax :: Set -> Set
+setExtractMax t = maybe t (fst . upmost . unmark) (setMax t)

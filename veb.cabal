@@ -16,14 +16,15 @@ source-repository head
   type: git
   location: https://github.com/shayne-fletcher/veb.git
 
-flag warnings_as_errors
+flag enable-warnings-as-errors
   default: False
   manual: True
   description: Enable warnings as errors
+
 common base
   default-language: GHC2024
   ghc-options: -Wall -fno-ignore-asserts
-  if flag(warnings_as_errors)
+  if flag(enable-warnings-as-errors)
     ghc-options: -Werror
   build-depends: base >= 4.20.0.0 && < 5
 

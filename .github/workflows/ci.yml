@@ -4,6 +4,28 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
+  hlint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: haskell-actions/hlint-setup@v2
+      with:
+        version: '3.8'
+    - name: "hlint src test"
+      uses: haskell-actions/hlint-run@v2
+      with:
+        path: '["src", "test"]'
+        fail-on: warning
+  ormolu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/run-ormolu@v16
+        with:
+          pattern: |
+            src/*.hs
+            test/*.hs
+          mode: check
   generate-matrix:
     name: "Generate matrix from cabal"
     outputs:

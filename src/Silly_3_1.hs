@@ -228,6 +228,20 @@ harvestRight = harvestRightRec []
       where
         parent = up loc
 
+minLoc :: Loc -> Maybe Loc
+minLoc (Node _ _ False, _) = Nothing
+minLoc loc@(Node l _ True, _) | not (setEmpty l) = minLoc (left loc)
+minLoc loc@(Node _ _ True, _) = minLoc (right loc)
+minLoc loc@(Leaf True, _) = Just loc
+minLoc (Leaf False, _) = Nothing
+
+maxLoc :: Loc -> Maybe Loc
+maxLoc (Node _ _ False, _) = Nothing
+maxLoc loc@(Node _ r True, _) | not (setEmpty r) = maxLoc (right loc)
+maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
+maxLoc loc@(Leaf True, _) = Just loc
+maxLoc (Leaf False, _) = Nothing
+
 --
 
 type Set = Tree
@@ -240,22 +254,8 @@ setEmpty _ = False
 setMin :: Set -> Maybe Loc
 setMin = minLoc . top
 
-minLoc :: Loc -> Maybe Loc
-minLoc (Node _ _ False, _) = Nothing
-minLoc loc@(Node l _ True, _) | not (setEmpty l) = minLoc (left loc)
-minLoc loc@(Node _ _ True, _) = minLoc (right loc)
-minLoc loc@(Leaf True, _) = Just loc
-minLoc _ = error "unexpected case"
-
 setMax :: Set -> Maybe Loc
 setMax = maxLoc . top
-
-maxLoc :: Loc -> Maybe Loc
-maxLoc (Node _ _ False, _) = Nothing
-maxLoc loc@(Node _ r True, _) | not (setEmpty r) = maxLoc (right loc)
-maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
-maxLoc loc@(Leaf True, _) = Just loc
-maxLoc (Leaf False, _) = Nothing
 
 setPred :: Loc -> Maybe Loc
 setPred = setPredLoc

@@ -1,7 +1,8 @@
 import Control.Exception
 import Control.Monad (forM_, replicateM)
 import Data.Bifunctor (bimap)
-import Data.List qualified
+import Data.List hiding (insert, delete)
+import Data.List qualified (delete)
 import Data.Maybe
 import Data.Set qualified
 import Silly_3_1

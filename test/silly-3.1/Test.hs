@@ -26,15 +26,26 @@ tests =
       testCase "toNum" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] toNumTest,
       testCase "toBits" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] toBitsTest,
       testCase "setEmpty" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] setEmptyTest,
+      testCase "setEmpty'" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] setEmptyTest',
       testCase "setMin" $
         sequence_
           [ setMinTest 2 [1, 2],
             setMinTest 12 [4096, 2048, 1024, 512]
           ],
+      testCase "setMin'" $
+        sequence_
+          [ setMinTest' 2 [1, 2],
+            setMinTest' 12 [4096, 2048, 1024, 512]
+          ],
       testCase "setMax" $
         sequence_
           [ setMaxTest 2 [1, 2],
             setMaxTest 12 [4095, 2048, 1024, 512]
+          ],
+      testCase "setMax'" $
+        sequence_
+          [ setMaxTest' 2 [1, 2],
+            setMaxTest' 12 [4095, 2048, 1024, 512]
           ],
       testCase "setPredSuccTest" $
         sequence_
@@ -43,9 +54,19 @@ tests =
             setPredSuccTest 3 [3, 4, 5, 6, 7] 5 (Just 4, Just 6),
             setPredSuccTest 3 [1, 2, 3, 4, 5, 6, 7, 8] 1 (Nothing, Just 2)
           ],
+      testCase "setPredSuccTest'" $
+        sequence_
+          [ setPredSuccTest' 1 [] 1 (Nothing, Nothing),
+            setPredSuccTest' 1 [1] 2 (Just 1, Nothing),
+            setPredSuccTest' 3 [3, 4, 5, 6, 7] 5 (Just 4, Just 6),
+            setPredSuccTest' 3 [1, 2, 3, 4, 5, 6, 7, 8] 1 (Nothing, Just 2)
+          ],
       testCase "setExtractMinTest" $ setExtractMinTest 12 [4095, 2048, 1024, 512],
+      testCase "setExtractMinTest'" $ setExtractMinTest' 12 [4095, 2048, 1024, 512],
       testCase "setExtractMaxTest" $ setExtractMaxTest 12 [4095, 2048, 1024, 512],
-      testCase "setNeighbourTest" setNeighbourTest
+      testCase "setExtractMaxTest'" $ setExtractMaxTest' 12 [4095, 2048, 1024, 512],
+      testCase "setNeighbourTest" setNeighbourTest,
+      testCase "setNeighbourTest'" setNeighbourTest'
     ]
 
 makeTest :: Int -> IO ()
@@ -129,6 +150,13 @@ setEmptyTest h = do
   assertBool "setEmpty" $ setEmpty t
   assertBool "not setEmpty" $ not (setEmpty t')
 
+setEmptyTest' :: Int -> Assertion
+setEmptyTest' h = do
+  let t = setNew' (Control.Exception.assert (h >= 0) h)
+      t' = setInsert' t 1
+  assertBool "setEmpty" $ setEmpty' t
+  assertBool "not setEmpty" $ not (setEmpty' t')
+
 setMinTest :: Int -> [Int] -> Assertion
 setMinTest h ls = do
   let n = 2 ^ h :: Int
@@ -136,12 +164,26 @@ setMinTest h ls = do
       t = foldl' (setInsert h) t0 (Control.Exception.assert (and [l >= 1 && l <= n | l <- ls]) ls)
   assertEqual "min element matches expected value" (minimum ls) (toNum . Data.Maybe.fromJust . setMin $ t)
 
+setMinTest' :: Int -> [Int] -> Assertion
+setMinTest' h ls = do
+  let n = 2 ^ h :: Int
+      t0 = setNew' (Control.Exception.assert (h >= 0) h)
+      t = foldl' setInsert' t0 (Control.Exception.assert (and [l >= 1 && l <= n | l <- ls]) ls)
+  assertEqual "min element matches expected value" (minimum ls) (toNum . Data.Maybe.fromJust . setMin' $ t)
+
 setMaxTest :: Int -> [Int] -> Assertion
 setMaxTest h ls = do
   let n = 2 ^ h :: Int
       t0 = make (Control.Exception.assert (h >= 0) h)
       t = foldl' (setInsert h) t0 (Control.Exception.assert (and [l >= 1 && l <= n | l <- ls]) ls)
   assertEqual "max element matches expected value" (maximum ls) (toNum . Data.Maybe.fromJust . setMax $ t)
+
+setMaxTest' :: Int -> [Int] -> Assertion
+setMaxTest' h ls = do
+  let n = 2 ^ h :: Int
+      t0 = setNew' (Control.Exception.assert (h >= 0) h)
+      t = foldl' setInsert' t0 (Control.Exception.assert (and [l >= 1 && l <= n | l <- ls]) ls)
+  assertEqual "max element matches expected value" (maximum ls) (toNum . Data.Maybe.fromJust . setMax' $ t)
 
 setPredSuccTest :: Int -> [Int] -> Int -> (Maybe Int, Maybe Int) -> Assertion
 setPredSuccTest h ls j expect = do
@@ -153,6 +195,17 @@ setPredSuccTest h ls j expect = do
   where
     maybeToNum = (toNum <$>)
 
+setPredSuccTest' :: Int -> [Int] -> Int -> (Maybe Int, Maybe Int) -> Assertion
+setPredSuccTest' h ls j expect = do
+  let n = 2 ^ h :: Int
+      t0 = setNew' (Control.Exception.assert (h >= 0) h)
+      t = foldl' setInsert' t0 (Control.Exception.assert (and [l >= 1 && l <= n | l <- ls]) ls)
+      Set' _ t' = t
+      loc = path (Control.Exception.assert (1 <= j && j <= n) j) h t'
+  assertEqual "pred/succ match expectations" expect (bimap maybeToNum maybeToNum (setPred' loc, setSucc' loc))
+  where
+    maybeToNum = (toNum <$>)
+
 setExtractMinTest :: Int -> [Int] -> Assertion
 setExtractMinTest h ls = do
   let n = 2 ^ h :: Int
@@ -160,6 +213,14 @@ setExtractMinTest h ls = do
       t = foldl' (setInsert h) t0 (Control.Exception.assert (and [l >= 0 && l < n | l <- ls]) ls)
       t' = setExtractMin t
   assertEqual "min element matches expected value" (minimum (Data.List.delete (minimum ls) ls)) (toNum . Data.Maybe.fromJust . setMin $ t')
+
+setExtractMinTest' :: Int -> [Int] -> Assertion
+setExtractMinTest' h ls = do
+  let n = 2 ^ h :: Int
+      t0 = setNew' (Control.Exception.assert (h >= 0) h)
+      t = foldl' setInsert' t0 (Control.Exception.assert (and [l >= 0 && l < n | l <- ls]) ls)
+      t' = setExtractMin' t
+  assertEqual "min element matches expected value" (minimum (Data.List.delete (minimum ls) ls)) (toNum . Data.Maybe.fromJust . setMin' $ t')
 
 setExtractMaxTest :: Int -> [Int] -> Assertion
 setExtractMaxTest h ls = do
@@ -169,11 +230,28 @@ setExtractMaxTest h ls = do
       t' = setExtractMax t
   assertEqual "max element matches expected value" (maximum (Data.List.delete (maximum ls) ls)) (toNum . Data.Maybe.fromJust . setMax $ t')
 
+setExtractMaxTest' :: Int -> [Int] -> Assertion
+setExtractMaxTest' h ls = do
+  let n = 2 ^ h :: Int
+      t0 = setNew' (Control.Exception.assert (h >= 0) h)
+      t = foldl' setInsert' t0 (Control.Exception.assert (and [l >= 0 && l < n | l <- ls]) ls)
+      t' = setExtractMax' t
+  assertEqual "max element matches expected value" (maximum (Data.List.delete (maximum ls) ls)) (toNum . Data.Maybe.fromJust . setMax' $ t')
+
 setNeighbourTest :: Assertion
 setNeighbourTest = do
   let h = 4 :: Int
       s = foldl' (setInsert h) (make h) [1, 5, 13, 14]
       n4 = setNeighbour h s 4
       n15 = setNeighbour h s 15
+  assertEqual "neighbour 4" (toNum (fromJust n4)) 1
+  assertEqual "neighbour 15" (toNum (fromJust n15)) 14
+
+setNeighbourTest' :: Assertion
+setNeighbourTest' = do
+  let h = 4 :: Int
+      s = foldl' setInsert' (setNew' h) [1, 5, 13, 14]
+      n4 = setNeighbour' s 4
+      n15 = setNeighbour' s 15
   assertEqual "neighbour 4" (toNum (fromJust n4)) 1
   assertEqual "neighbour 15" (toNum (fromJust n15)) 14

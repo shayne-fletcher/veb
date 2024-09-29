@@ -40,6 +40,7 @@ module Silly_3_1
     setSucc, -- Compute the least element of S > j
     setExtractMin, -- Delete the least element from S
     setExtractMax, -- Delete the largest element from S
+    setNeighbour, -- Compute the neighour of j in S
   )
 where
 
@@ -255,6 +256,12 @@ maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
 maxLoc loc@(Leaf True, _) = Just loc
 maxLoc (Leaf False, _) = Nothing
 
+neighbourLoc :: Loc -> Maybe Loc
+neighbourLoc (_, Top) = Nothing
+neighbourLoc loc@(_, L _ r) | getMark r = minLoc (right (up loc))
+neighbourLoc loc@(_, R l _) | getMark l = maxLoc (left (up loc))
+neighbourLoc loc = neighbourLoc (up loc)
+
 --
 
 type Set = Tree
@@ -291,6 +298,9 @@ setSucc = setSuccLoc
         r@(Just _) -> r
         Nothing -> setSuccLoc (up loc)
     setSuccLoc loc@(_, R _ _) = setSuccLoc (up loc)
+
+setNeighbour :: Int -> Set -> Int -> Maybe Loc
+setNeighbour h s i = neighbourLoc (path i h s)
 
 setInsert :: Int -> Set -> Int -> Set
 setInsert = insert

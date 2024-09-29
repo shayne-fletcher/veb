@@ -24,6 +24,7 @@ tests =
     [ testCase "make" $ forM_ [0 .. 16] makeTest,
       testCase "mark" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] markTest,
       testCase "toNum" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] toNumTest,
+      testCase "toBits" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] toBitsTest,
       testCase "setEmpty" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] setEmptyTest,
       testCase "setMin" $
         sequence_
@@ -70,14 +71,16 @@ markTest h = do
   assertBool "expected marks" $
     and [getMark (fst (at ls (i - 1) n)) | i <- is]
   assertBool "no unexpected marks" $
-    not . or $ [getMark . fst $ at ls (i - 1) n | i <- [1 .. n], i `notElem` is]
+    not . or $
+      [getMark . fst $ at ls (i - 1) n | i <- [1 .. n], i `notElem` is]
 
   let t' = foldl' (delete h) t is
       ls' = leaves t'
   assertBool "expected marks" $
     and [not . getMark $ fst (at ls' (i - 1) n) | i <- is]
   assertBool "no unexpected marks" $
-    not . or $ [getMark . fst $ at ls' (i - 1) n | i <- [1 .. n], i `notElem` is]
+    not . or $
+      [getMark . fst $ at ls' (i - 1) n | i <- [1 .. n], i `notElem` is]
   where
     at :: [Loc] -> Int -> Int -> Loc
     at ls i n = ls !! Control.Exception.assert (i >= 0 && i < n) i
@@ -97,6 +100,26 @@ toNumTest h = do
       ls = leaves t
       ns = map toNum ls :: [Int]
   assertEqual "leaf value matches its' index" ([1 .. n] :: [Int]) ns
+
+toBitsTest :: Int -> Assertion
+toBitsTest h = do
+  let t0 = make (Control.Exception.assert (h >= 0) h)
+      ls = leaves t0
+      is = map (padZeros h . toBinary . (+ (-1)) . toNum) ls
+      bs = map toBits ls
+  assertEqual "leaf bits and index bits agree" is bs
+  where
+    toBinary :: Int -> [Int]
+    toBinary 0 = []
+    toBinary n = (n `mod` 2) : toBinary (n `div` 2)
+
+    padZeros :: Int -> [Int] -> [Int]
+    padZeros w cs =
+      if len >= w
+        then cs
+        else cs ++ replicate (w - len) 0
+      where
+        len = length cs
 
 setEmptyTest :: Int -> Assertion
 setEmptyTest h = do

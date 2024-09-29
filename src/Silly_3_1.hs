@@ -13,6 +13,7 @@ module Silly_3_1
     upmost,
     --
     Order (..),
+    commonPrefix,
     harvest,
     harvestLeft,
     harvestRight,
@@ -24,6 +25,7 @@ module Silly_3_1
     modify,
     path,
     postorder,
+    toBits,
     toNum,
     unmark,
     visit,
@@ -43,6 +45,8 @@ where
 
 import Control.Exception (assert)
 import Data.Bits
+
+-- import Data.List qualified as List
 
 data Tree = Leaf Bool | Node Tree Tree Bool
   deriving (Show, Eq)
@@ -161,13 +165,20 @@ path entry h = pathRec top (assert (entry >= 1 && entry <= 2 ^ h) (entry - 1)) 0
         k = n - 1
         mask = 1 `shiftL` k
 
+toBits :: Loc -> [Int]
+toBits (_, Top) = []
+toBits loc@(_, R _ _) = 1 : toBits (up loc)
+toBits loc@(_, L _ _) = 0 : toBits (up loc)
+
+commonPrefix :: Loc -> Loc -> [Int]
+commonPrefix l r = fst $ foldl' f ([], False) (zip (toBits l) (toBits r))
+  where
+    f (acc, True) _ = (acc, True)
+    f (acc, False) (x, y) | x == y = (x : acc, False)
+    f (acc, False) _ = (acc, True)
+
 toNum :: Loc -> Int
 toNum l@(Leaf _, _) = 1 + foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
-  where
-    toBits :: Loc -> [Int]
-    toBits (_, Top) = []
-    toBits loc@(_, R _ _) = 1 : toBits (up loc)
-    toBits loc@(_, L _ _) = 0 : toBits (up loc)
 toNum _ = error "toNum called on non-leaf"
 
 --

@@ -2,7 +2,6 @@ module Silly_3_1
   ( Tree (..),
     height,
     getMark,
-    marked,
     --
     Ctx (..),
     Loc,
@@ -40,6 +39,19 @@ module Silly_3_1
     setExtractMin, -- Delete the least element from S
     setExtractMax, -- Delete the largest element from S
     setNeighbour, -- Compute the neighour of j in S
+    --
+    Set' (..),
+    setNew',
+    setInsert',
+    setDelete',
+    setEmpty',
+    setMin',
+    setMax',
+    setPred',
+    setSucc',
+    setNeighbour',
+    setExtractMin',
+    setExtractMax',
   )
 where
 
@@ -54,9 +66,6 @@ data Tree = Leaf Bool | Node Tree Tree Bool
 height :: Tree -> Int
 height (Leaf _) = 0
 height (Node l _ _) = height l + 1
-
-marked :: Tree -> Bool
-marked = getMark
 
 getMark :: Tree -> Bool
 getMark (Leaf m) = m
@@ -236,14 +245,14 @@ harvestRight = harvestRightRec []
 
 minLoc :: Loc -> Maybe Loc
 minLoc (Node _ _ False, _) = Nothing
-minLoc loc@(Node l _ True, _) | not (setEmpty l) = minLoc (left loc)
+minLoc loc@(Node l _ True, _) | getMark l = minLoc (left loc)
 minLoc loc@(Node _ _ True, _) = minLoc (right loc)
 minLoc loc@(Leaf True, _) = Just loc
 minLoc (Leaf False, _) = Nothing
 
 maxLoc :: Loc -> Maybe Loc
 maxLoc (Node _ _ False, _) = Nothing
-maxLoc loc@(Node _ r True, _) | not (setEmpty r) = maxLoc (right loc)
+maxLoc loc@(Node _ r True, _) | getMark r = maxLoc (right loc)
 maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
 maxLoc loc@(Leaf True, _) = Just loc
 maxLoc (Leaf False, _) = Nothing
@@ -274,6 +283,12 @@ succLoc loc@(_, R _ _) = succLoc (up loc)
 
 type Set = Tree
 
+setInsert :: Int -> Set -> Int -> Set
+setInsert = insert
+
+setDelete :: Int -> Set -> Int -> Set
+setDelete = delete
+
 setEmpty :: Set -> Bool
 setEmpty = not . getMark
 
@@ -292,14 +307,45 @@ setSucc = succLoc
 setNeighbour :: Int -> Set -> Int -> Maybe Loc
 setNeighbour h s i = neighbourLoc (path i h s)
 
-setInsert :: Int -> Set -> Int -> Set
-setInsert = insert
-
-setDelete :: Int -> Set -> Int -> Set
-setDelete = delete
-
 setExtractMin :: Set -> Set
 setExtractMin t = maybe t (fst . upmost . unmark) (setMin t)
 
 setExtractMax :: Set -> Set
 setExtractMax t = maybe t (fst . upmost . unmark) (setMax t)
+
+--
+
+data Set' = Set' Int Set
+
+setNew' :: Int -> Set'
+setNew' h = Set' h (make h)
+
+setInsert' :: Set' -> Int -> Set'
+setInsert' (Set' h s) = Set' h . insert h s
+
+setDelete' :: Set' -> Int -> Set'
+setDelete' (Set' h s) = Set' h . delete h s
+
+setEmpty' :: Set' -> Bool
+setEmpty' (Set' _ s) = not (getMark s)
+
+setMin' :: Set' -> Maybe Loc
+setMin' (Set' _ s) = minLoc (top s)
+
+setMax' :: Set' -> Maybe Loc
+setMax' (Set' _ s) = maxLoc (top s)
+
+setPred' :: Loc -> Maybe Loc
+setPred' = predLoc
+
+setSucc' :: Loc -> Maybe Loc
+setSucc' = succLoc
+
+setNeighbour' :: Set' -> Int -> Maybe Loc
+setNeighbour' (Set' h s) i = neighbourLoc (path i h s)
+
+setExtractMin' :: Set' -> Set'
+setExtractMin' s@(Set' h t) = Set' h (maybe t (fst . upmost . unmark) (setMin' s))
+
+setExtractMax' :: Set' -> Set'
+setExtractMax' s@(Set' h t) = Set' h (maybe t (fst . upmost . unmark) (setMax' s))

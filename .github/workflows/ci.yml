@@ -4,6 +4,15 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
+  whitespace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for trailing whitespace
+        run: |
+          git diff --check origin/main HEAD
   hlint:
     runs-on: ubuntu-latest
     steps:
@@ -19,7 +28,6 @@ jobs:
   ormolu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: haskell-actions/run-ormolu@v16
         with:
           pattern: |

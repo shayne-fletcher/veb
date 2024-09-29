@@ -13,7 +13,6 @@ module Silly_3_1
     upmost,
     --
     Order (..),
-    commonPrefix,
     harvest,
     harvestLeft,
     harvestRight,
@@ -170,13 +169,6 @@ toBits :: Loc -> [Int]
 toBits (_, Top) = []
 toBits loc@(_, R _ _) = 1 : toBits (up loc)
 toBits loc@(_, L _ _) = 0 : toBits (up loc)
-
-commonPrefix :: Loc -> Loc -> [Int]
-commonPrefix l r = fst $ foldl' f ([], False) (zip (toBits l) (toBits r))
-  where
-    f (acc, True) _ = (acc, True)
-    f (acc, False) (x, y) | x == y = (x : acc, False)
-    f (acc, False) _ = (acc, True)
 
 toNum :: Loc -> Int
 toNum l@(Leaf _, _) = 1 + foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))

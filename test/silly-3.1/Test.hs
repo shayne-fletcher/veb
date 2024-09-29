@@ -22,9 +22,9 @@ tests =
   testGroup
     " All tests"
     [ testCase "make" $ forM_ [0 .. 16] makeTest,
-      testCase "mark" $ forM_ [2 ^ h | h <- [0 .. 4] :: [Int]] markTest,
-      testCase "toNum" $ forM_ [2 ^ h | h <- [0 .. 4] :: [Int]] toNumTest,
-      testCase "setEmpty" $ forM_ [2 ^ h | h <- [0 .. 4] :: [Int]] setEmptyTest,
+      testCase "mark" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] markTest,
+      testCase "toNum" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] toNumTest,
+      testCase "setEmpty" $ forM_ [{- h= -} 2 ^ k | k <- [0 .. 4] :: [Int]] setEmptyTest,
       testCase "setMin" $
         sequence_
           [ setMinTest 2 [1, 2],
@@ -70,16 +70,14 @@ markTest h = do
   assertBool "expected marks" $
     and [getMark (fst (at ls (i - 1) n)) | i <- is]
   assertBool "no unexpected marks" $
-    not . or $
-      [getMark $ fst (at ls (i - 1) n) | i <- [1 .. n], i `notElem` is]
+    not . or $ [getMark . fst $ at ls (i - 1) n | i <- [1 .. n], i `notElem` is]
 
   let t' = foldl' (delete h) t is
       ls' = leaves t'
   assertBool "expected marks" $
     and [not . getMark $ fst (at ls' (i - 1) n) | i <- is]
   assertBool "no unexpected marks" $
-    not . or $
-      [getMark $ fst (at ls' (i - 1) n) | i <- [1 .. n], i `notElem` is]
+    not . or $ [getMark . fst $ at ls' (i - 1) n | i <- [1 .. n], i `notElem` is]
   where
     at :: [Loc] -> Int -> Int -> Loc
     at ls i n = ls !! Control.Exception.assert (i >= 0 && i < n) i

@@ -11,7 +11,7 @@ main = do
       t' = fst . upmost . mark $ path val h t
       ls = leaves t'
       len = length ls
-  assert (getMark (fst (ls !! val))) (pure ())
+  assert (getMark (fst (ls !! (val - 1)))) (pure ())
   putStrLn $ "n = " <> assert (len == n) (show n)
   putStrLn $ "root t' " <> if marked t' then "is marked" else "is not " <> "marked"
   -- putStrLn $ show t'

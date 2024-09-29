@@ -106,7 +106,7 @@ insert :: Int -> Tree -> Int -> Tree
 insert h t x =
   fst . upmost . mark $
     path
-      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (x >= 1 && x <= 2 ^ h) x)
       (assert (h >= 0) h)
       t
 
@@ -114,7 +114,7 @@ delete :: Int -> Tree -> Int -> Tree
 delete h t x =
   fst . upmost . unmark $
     path
-      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (x >= 1 && x <= 2 ^ h) x)
       (assert (h >= 0) h)
       t
 
@@ -138,7 +138,7 @@ make h =
             (r, c2) = make_rec (level - 1)
 
 path :: Int -> Int -> (Tree -> Loc)
-path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
+path entry h = pathRec top (assert (entry >= 1 && entry <= 2 ^ h) (entry - 1)) 0
   where
     pathRec :: (Tree -> Loc) -> Int -> Int -> (Tree -> Loc)
     pathRec acc n i =
@@ -162,7 +162,7 @@ path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
         mask = 1 `shiftL` k
 
 toNum :: Loc -> Int
-toNum l@(Leaf _, _) = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
+toNum l@(Leaf _, _) = 1 + foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
   where
     toBits :: Loc -> [Int]
     toBits (_, Top) = []

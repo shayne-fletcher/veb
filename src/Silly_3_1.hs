@@ -1,7 +1,7 @@
 module Silly_3_1
   ( Tree (..),
     height,
-    getMark,
+    marked,
     --
     Ctx (..),
     Loc,
@@ -41,17 +41,17 @@ module Silly_3_1
     setNeighbour, -- Compute the neighour of j in S
     --
     Set' (..),
-    setNew',
-    setInsert',
-    setDelete',
-    setEmpty',
-    setMin',
-    setMax',
-    setPred',
-    setSucc',
-    setNeighbour',
-    setExtractMin',
-    setExtractMax',
+    setNew', -- New S
+    setInsert', -- S ∪ {i}
+    setDelete', -- S \ {j}
+    setEmpty', -- S = ∅ ?
+    setMin', -- -- Compute the least element of S
+    setMax', -- Compute the largest element of S
+    setPred', -- Compute the largest element of S < j
+    setSucc', -- Compute the least element of S > j
+    setNeighbour', -- Compute the neighour of j in S
+    setExtractMin', -- Delete the least element from S
+    setExtractMax', -- Delete the largest element from S
   )
 where
 
@@ -67,9 +67,9 @@ height :: Tree -> Int
 height (Leaf _) = 0
 height (Node l _ _) = height l + 1
 
-getMark :: Tree -> Bool
-getMark (Leaf m) = m
-getMark (Node _ _ m) = m
+marked :: Tree -> Bool
+marked (Leaf m) = m
+marked (Node _ _ m) = m
 
 -- Huet zipper. See
 -- http://www.st.cs.uni-sb.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf
@@ -91,8 +91,8 @@ top :: Tree -> Loc
 top t = (t, Top)
 
 up :: Loc -> Loc
-up (t, L c r) = (Node t r (getMark t || getMark r), c)
-up (t, R l c) = (Node l t (getMark l || getMark t), c)
+up (t, L c r) = (Node t r (marked t || marked r), c)
+up (t, R l c) = (Node l t (marked l || marked t), c)
 up (_, Top) = error "`up` applied to location containing `Top`"
 
 upmost :: Loc -> Loc
@@ -245,22 +245,22 @@ harvestRight = harvestRightRec []
 
 minLoc :: Loc -> Maybe Loc
 minLoc (Node _ _ False, _) = Nothing
-minLoc loc@(Node l _ True, _) | getMark l = minLoc (left loc)
+minLoc loc@(Node l _ True, _) | marked l = minLoc (left loc)
 minLoc loc@(Node _ _ True, _) = minLoc (right loc)
 minLoc loc@(Leaf True, _) = Just loc
 minLoc (Leaf False, _) = Nothing
 
 maxLoc :: Loc -> Maybe Loc
 maxLoc (Node _ _ False, _) = Nothing
-maxLoc loc@(Node _ r True, _) | getMark r = maxLoc (right loc)
+maxLoc loc@(Node _ r True, _) | marked r = maxLoc (right loc)
 maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
 maxLoc loc@(Leaf True, _) = Just loc
 maxLoc (Leaf False, _) = Nothing
 
 neighbourLoc :: Loc -> Maybe Loc
 neighbourLoc (_, Top) = Nothing
-neighbourLoc loc@(_, L _ r) | getMark r = minLoc (right (up loc))
-neighbourLoc loc@(_, R l _) | getMark l = maxLoc (left (up loc))
+neighbourLoc loc@(_, L _ r) | marked r = minLoc (right (up loc))
+neighbourLoc loc@(_, R l _) | marked l = maxLoc (left (up loc))
 neighbourLoc loc = neighbourLoc (up loc)
 
 predLoc :: Loc -> Maybe Loc
@@ -290,7 +290,7 @@ setDelete :: Int -> Set -> Int -> Set
 setDelete = delete
 
 setEmpty :: Set -> Bool
-setEmpty = not . getMark
+setEmpty = not . marked
 
 setMin :: Set -> Maybe Loc
 setMin = minLoc . top
@@ -327,7 +327,7 @@ setDelete' :: Set' -> Int -> Set'
 setDelete' (Set' h s) = Set' h . delete h s
 
 setEmpty' :: Set' -> Bool
-setEmpty' (Set' _ s) = not (getMark s)
+setEmpty' (Set' _ s) = not (marked s)
 
 setMin' :: Set' -> Maybe Loc
 setMin' (Set' _ s) = minLoc (top s)

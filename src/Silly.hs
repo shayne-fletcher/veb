@@ -11,9 +11,9 @@ main = do
       t' = fst . upmost . mark $ path val h t
       ls = leaves t'
       len = length ls
-  assert (getMark (fst (ls !! (val - 1)))) (pure ())
+  assert (marked (fst (ls !! (val - 1)))) (pure ())
   putStrLn $ "n = " <> assert (len == n) (show n)
-  putStrLn $ "root t' " <> if getMark t' then "is marked" else "is not " <> "marked"
+  putStrLn $ "root t' " <> if marked t' then "is marked" else "is not " <> "marked"
   -- putStrLn $ show t'
 
   print (map toNum ls)
@@ -23,7 +23,7 @@ main = do
   let s = path 65535 h t'
       sInBits = foldl' (<>) [] $ reverse (map show (toBits s))
 
-  putStrLn $ show (toBits s)
+  print $ toBits s
   putStrLn sInBits
 
   print (map toNum (harvestLeft (path 5 h t')))

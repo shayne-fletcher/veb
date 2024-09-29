@@ -70,18 +70,18 @@ markTest h = do
   let t = foldl' (setInsert h) t0 is
       ls = leaves t
   assertBool "expected marks" $
-    and [getMark (fst (at ls (i - 1) n)) | i <- is]
+    and [marked (fst (at ls (i - 1) n)) | i <- is]
   assertBool "no unexpected marks" $
     not . or $
-      [getMark . fst $ at ls (i - 1) n | i <- [1 .. n], i `notElem` is]
+      [marked . fst $ at ls (i - 1) n | i <- [1 .. n], i `notElem` is]
 
   let t' = foldl' (delete h) t is
       ls' = leaves t'
   assertBool "expected marks" $
-    and [not . getMark $ fst (at ls' (i - 1) n) | i <- is]
+    and [not . marked $ fst (at ls' (i - 1) n) | i <- is]
   assertBool "no unexpected marks" $
     not . or $
-      [getMark . fst $ at ls' (i - 1) n | i <- [1 .. n], i `notElem` is]
+      [marked . fst $ at ls' (i - 1) n | i <- [1 .. n], i `notElem` is]
   where
     at :: [Loc] -> Int -> Int -> Loc
     at ls i n = ls !! Control.Exception.assert (i >= 0 && i < n) i

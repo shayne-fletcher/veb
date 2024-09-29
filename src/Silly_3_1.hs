@@ -262,14 +262,28 @@ neighbourLoc loc@(_, L _ r) | getMark r = minLoc (right (up loc))
 neighbourLoc loc@(_, R l _) | getMark l = maxLoc (left (up loc))
 neighbourLoc loc = neighbourLoc (up loc)
 
+predLoc :: Loc -> Maybe Loc
+predLoc (_, Top) = Nothing
+predLoc loc@(_, R _ _) =
+  case maxLoc (left (up loc)) of
+    r@(Just _) -> r
+    Nothing -> predLoc (up loc)
+predLoc loc@(_, L _ _) = predLoc (up loc)
+
+succLoc :: Loc -> Maybe Loc
+succLoc (_, Top) = Nothing
+succLoc loc@(_, L _ _) =
+  case minLoc (right (up loc)) of
+    r@(Just _) -> r
+    Nothing -> succLoc (up loc)
+succLoc loc@(_, R _ _) = succLoc (up loc)
+
 --
 
 type Set = Tree
 
 setEmpty :: Set -> Bool
-setEmpty (Node _ _ False) = True
-setEmpty (Leaf False) = True
-setEmpty _ = False
+setEmpty = not . getMark
 
 setMin :: Set -> Maybe Loc
 setMin = minLoc . top
@@ -278,26 +292,10 @@ setMax :: Set -> Maybe Loc
 setMax = maxLoc . top
 
 setPred :: Loc -> Maybe Loc
-setPred = setPredLoc
-  where
-    setPredLoc :: Loc -> Maybe Loc
-    setPredLoc (_, Top) = Nothing
-    setPredLoc loc@(_, R _ _) =
-      case maxLoc (left (up loc)) of
-        r@(Just _) -> r
-        Nothing -> setPredLoc (up loc)
-    setPredLoc loc@(_, L _ _) = setPredLoc (up loc)
+setPred = predLoc
 
 setSucc :: Loc -> Maybe Loc
-setSucc = setSuccLoc
-  where
-    setSuccLoc :: Loc -> Maybe Loc
-    setSuccLoc (_, Top) = Nothing
-    setSuccLoc loc@(_, L _ _) =
-      case minLoc (right (up loc)) of
-        r@(Just _) -> r
-        Nothing -> setSuccLoc (up loc)
-    setSuccLoc loc@(_, R _ _) = setSuccLoc (up loc)
+setSucc = succLoc
 
 setNeighbour :: Int -> Set -> Int -> Maybe Loc
 setNeighbour h s i = neighbourLoc (path i h s)

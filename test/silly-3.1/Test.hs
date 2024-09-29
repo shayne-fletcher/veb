@@ -28,7 +28,7 @@ tests =
       testCase "setMin" $
         sequence_
           [ setMinTest 2 [1, 2],
-            setMinTest 12 [4095, 2048, 1024, 512]
+            setMinTest 12 [4096, 2048, 1024, 512]
           ],
       testCase "setMax" $
         sequence_

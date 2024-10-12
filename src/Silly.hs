@@ -17,8 +17,8 @@ main = do
   -- putStrLn $ show t'
 
   print (map toNum ls)
-  assert (fromJust (setMin t') == path val h t') (pure ())
-  putStrLn $ "min = " <> show (toNum (fromJust (setMin t')))
+  assert (fromJust ((minLoc . top) t') == path val h t') (pure ())
+  putStrLn $ "min = " <> show (toNum (fromJust ((minLoc . top) t')))
 
   let s = path 65535 h t'
       sInBits = foldl' (<>) [] $ reverse (map show (toBits s))

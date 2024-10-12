@@ -20,25 +20,18 @@ module Silly_3_1
     leaves,
     make,
     mark,
+    minLoc,
+    maxLoc,
     modify,
+    neighbourLoc,
     path,
     postorder,
+    predLoc,
+    succLoc,
     toBits,
     toNum,
     unmark,
     visit,
-    --
-    Set,
-    setEmpty, -- S = ∅
-    setDelete, -- S \ {j}
-    setInsert, -- S ∪ {i}
-    setMax, -- Compute the largest element of S
-    setMin, -- Compute the least element of S
-    setPred, -- Compute the largest element of S < j
-    setSucc, -- Compute the least element of S > j
-    setExtractMin, -- Delete the least element from S
-    setExtractMax, -- Delete the largest element from S
-    setNeighbour, -- Compute the neighour of j in S
     --
     Set' (..),
     setNew', -- New S
@@ -282,36 +275,6 @@ succLoc loc@(_, R _ _) = succLoc (up loc)
 --
 
 type Set = Tree
-
-setInsert :: Int -> Set -> Int -> Set
-setInsert = insert
-
-setDelete :: Int -> Set -> Int -> Set
-setDelete = delete
-
-setEmpty :: Set -> Bool
-setEmpty = not . marked
-
-setMin :: Set -> Maybe Loc
-setMin = minLoc . top
-
-setMax :: Set -> Maybe Loc
-setMax = maxLoc . top
-
-setPred :: Loc -> Maybe Loc
-setPred = predLoc
-
-setSucc :: Loc -> Maybe Loc
-setSucc = succLoc
-
-setNeighbour :: Int -> Set -> Int -> Maybe Loc
-setNeighbour h s i = neighbourLoc (path i h s)
-
-setExtractMin :: Set -> Set
-setExtractMin t = maybe t (fst . upmost . unmark) (setMin t)
-
-setExtractMax :: Set -> Set
-setExtractMax t = maybe t (fst . upmost . unmark) (setMax t)
 
 --
 

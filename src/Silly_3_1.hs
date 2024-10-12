@@ -1,7 +1,6 @@
 module Silly_3_1
   ( Tree (..),
     height,
-    getMark,
     marked,
     --
     Ctx (..),
@@ -21,28 +20,38 @@ module Silly_3_1
     leaves,
     make,
     mark,
+    minLoc,
+    maxLoc,
     modify,
+    neighbourLoc,
     path,
     postorder,
+    predLoc,
+    succLoc,
+    toBits,
     toNum,
     unmark,
     visit,
     --
-    Set,
-    setEmpty, -- S = ∅
-    setDelete, -- S \ {j}
-    setInsert, -- S ∪ {i}
-    setMax, -- Compute the largest element of S
-    setMin, -- Compute the least element of S
-    setPred, -- Compute the largest element of S < j
-    setSucc, -- Compute the least element of S > j
-    setExtractMin, -- Delete the least element from S
-    setExtractMax, -- Delete the largest element from S
+    Set' (..),
+    setNew', -- New S
+    setInsert', -- S ∪ {i}
+    setDelete', -- S \ {j}
+    setEmpty', -- S = ∅ ?
+    setMin', -- -- Compute the least element of S
+    setMax', -- Compute the largest element of S
+    setPred', -- Compute the largest element of S < j
+    setSucc', -- Compute the least element of S > j
+    setNeighbour', -- Compute the neighour of j in S
+    setExtractMin', -- Delete the least element from S
+    setExtractMax', -- Delete the largest element from S
   )
 where
 
 import Control.Exception (assert)
 import Data.Bits
+
+-- import Data.List qualified as List
 
 data Tree = Leaf Bool | Node Tree Tree Bool
   deriving (Show, Eq)
@@ -52,11 +61,8 @@ height (Leaf _) = 0
 height (Node l _ _) = height l + 1
 
 marked :: Tree -> Bool
-marked = getMark
-
-getMark :: Tree -> Bool
-getMark (Leaf m) = m
-getMark (Node _ _ m) = m
+marked (Leaf m) = m
+marked (Node _ _ m) = m
 
 -- Huet zipper. See
 -- http://www.st.cs.uni-sb.de/edu/seminare/2005/advanced-fp/docs/huet-zipper.pdf
@@ -78,8 +84,8 @@ top :: Tree -> Loc
 top t = (t, Top)
 
 up :: Loc -> Loc
-up (t, L c r) = (Node t r (getMark t || getMark r), c)
-up (t, R l c) = (Node l t (getMark l || getMark t), c)
+up (t, L c r) = (Node t r (marked t || marked r), c)
+up (t, R l c) = (Node l t (marked l || marked t), c)
 up (_, Top) = error "`up` applied to location containing `Top`"
 
 upmost :: Loc -> Loc
@@ -106,7 +112,7 @@ insert :: Int -> Tree -> Int -> Tree
 insert h t x =
   fst . upmost . mark $
     path
-      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (x >= 1 && x <= 2 ^ h) x)
       (assert (h >= 0) h)
       t
 
@@ -114,7 +120,7 @@ delete :: Int -> Tree -> Int -> Tree
 delete h t x =
   fst . upmost . unmark $
     path
-      (assert (x >= 0 && x < 2 ^ h) x)
+      (assert (x >= 1 && x <= 2 ^ h) x)
       (assert (h >= 0) h)
       t
 
@@ -138,7 +144,7 @@ make h =
             (r, c2) = make_rec (level - 1)
 
 path :: Int -> Int -> (Tree -> Loc)
-path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
+path entry h = pathRec top (assert (entry >= 1 && entry <= 2 ^ h) (entry - 1)) 0
   where
     pathRec :: (Tree -> Loc) -> Int -> Int -> (Tree -> Loc)
     pathRec acc n i =
@@ -161,13 +167,13 @@ path entry h = pathRec top (assert (entry >= 0 && entry < 2 ^ h) entry) 0
         k = n - 1
         mask = 1 `shiftL` k
 
+toBits :: Loc -> [Int]
+toBits (_, Top) = []
+toBits loc@(_, R _ _) = 1 : toBits (up loc)
+toBits loc@(_, L _ _) = 0 : toBits (up loc)
+
 toNum :: Loc -> Int
-toNum l@(Leaf _, _) = foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
-  where
-    toBits :: Loc -> [Int]
-    toBits (_, Top) = []
-    toBits loc@(_, R _ _) = 1 : toBits (up loc)
-    toBits loc@(_, L _ _) = 0 : toBits (up loc)
+toNum l@(Leaf _, _) = 1 + foldl' (\acc (c, i) -> acc + c * 2 ^ i) 0 (zip (toBits l) ([0 ..] :: [Int]))
 toNum _ = error "toNum called on non-leaf"
 
 --
@@ -232,63 +238,77 @@ harvestRight = harvestRightRec []
 
 minLoc :: Loc -> Maybe Loc
 minLoc (Node _ _ False, _) = Nothing
-minLoc loc@(Node l _ True, _) | not (setEmpty l) = minLoc (left loc)
+minLoc loc@(Node l _ True, _) | marked l = minLoc (left loc)
 minLoc loc@(Node _ _ True, _) = minLoc (right loc)
 minLoc loc@(Leaf True, _) = Just loc
 minLoc (Leaf False, _) = Nothing
 
 maxLoc :: Loc -> Maybe Loc
 maxLoc (Node _ _ False, _) = Nothing
-maxLoc loc@(Node _ r True, _) | not (setEmpty r) = maxLoc (right loc)
+maxLoc loc@(Node _ r True, _) | marked r = maxLoc (right loc)
 maxLoc loc@(Node _ _ True, _) = maxLoc (left loc)
 maxLoc loc@(Leaf True, _) = Just loc
 maxLoc (Leaf False, _) = Nothing
+
+neighbourLoc :: Loc -> Maybe Loc
+neighbourLoc (_, Top) = Nothing
+neighbourLoc loc@(_, L _ r) | marked r = minLoc (right (up loc))
+neighbourLoc loc@(_, R l _) | marked l = maxLoc (left (up loc))
+neighbourLoc loc = neighbourLoc (up loc)
+
+predLoc :: Loc -> Maybe Loc
+predLoc (_, Top) = Nothing
+predLoc loc@(_, R _ _) =
+  case maxLoc (left (up loc)) of
+    r@(Just _) -> r
+    Nothing -> predLoc (up loc)
+predLoc loc@(_, L _ _) = predLoc (up loc)
+
+succLoc :: Loc -> Maybe Loc
+succLoc (_, Top) = Nothing
+succLoc loc@(_, L _ _) =
+  case minLoc (right (up loc)) of
+    r@(Just _) -> r
+    Nothing -> succLoc (up loc)
+succLoc loc@(_, R _ _) = succLoc (up loc)
 
 --
 
 type Set = Tree
 
-setEmpty :: Set -> Bool
-setEmpty (Node _ _ False) = True
-setEmpty (Leaf False) = True
-setEmpty _ = False
+--
 
-setMin :: Set -> Maybe Loc
-setMin = minLoc . top
+data Set' = Set' Int Set
 
-setMax :: Set -> Maybe Loc
-setMax = maxLoc . top
+setNew' :: Int -> Set'
+setNew' h = Set' h (make h)
 
-setPred :: Loc -> Maybe Loc
-setPred = setPredLoc
-  where
-    setPredLoc :: Loc -> Maybe Loc
-    setPredLoc (_, Top) = Nothing
-    setPredLoc loc@(_, R _ _) =
-      case maxLoc (left (up loc)) of
-        r@(Just _) -> r
-        Nothing -> setPredLoc (up loc)
-    setPredLoc loc@(_, L _ _) = setPredLoc (up loc)
+setInsert' :: Set' -> Int -> Set'
+setInsert' (Set' h s) = Set' h . insert h s
 
-setSucc :: Loc -> Maybe Loc
-setSucc = setSuccLoc
-  where
-    setSuccLoc :: Loc -> Maybe Loc
-    setSuccLoc (_, Top) = Nothing
-    setSuccLoc loc@(_, L _ _) =
-      case minLoc (right (up loc)) of
-        r@(Just _) -> r
-        Nothing -> setSuccLoc (up loc)
-    setSuccLoc loc@(_, R _ _) = setSuccLoc (up loc)
+setDelete' :: Set' -> Int -> Set'
+setDelete' (Set' h s) = Set' h . delete h s
 
-setInsert :: Int -> Set -> Int -> Set
-setInsert = insert
+setEmpty' :: Set' -> Bool
+setEmpty' (Set' _ s) = not (marked s)
 
-setDelete :: Int -> Set -> Int -> Set
-setDelete = delete
+setMin' :: Set' -> Maybe Loc
+setMin' (Set' _ s) = minLoc (top s)
 
-setExtractMin :: Set -> Set
-setExtractMin t = maybe t (fst . upmost . unmark) (setMin t)
+setMax' :: Set' -> Maybe Loc
+setMax' (Set' _ s) = maxLoc (top s)
 
-setExtractMax :: Set -> Set
-setExtractMax t = maybe t (fst . upmost . unmark) (setMax t)
+setPred' :: Loc -> Maybe Loc
+setPred' = predLoc
+
+setSucc' :: Loc -> Maybe Loc
+setSucc' = succLoc
+
+setNeighbour' :: Set' -> Int -> Maybe Loc
+setNeighbour' (Set' h s) i = neighbourLoc (path i h s)
+
+setExtractMin' :: Set' -> Set'
+setExtractMin' s@(Set' h t) = Set' h (maybe t (fst . upmost . unmark) (setMin' s))
+
+setExtractMax' :: Set' -> Set'
+setExtractMax' s@(Set' h t) = Set' h (maybe t (fst . upmost . unmark) (setMax' s))

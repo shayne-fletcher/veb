@@ -73,16 +73,16 @@ jobs:
       - run: cabal build all
       - run: cabal test --test-option=--color=always --test-show-details=always test-suite:silly-3.1-test
       - run: cabal haddock --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs' --haddock-hyperlink-source --haddock-quickjump --builddir=cabal haddock
-      # - name: set reusable strings
-      #   id: strings
-      #   shell: bash
-      #   run: |
-      #     docsdir=$(find dist-newstyle -type d -name "html")
-      #     if [[ -z "$docsdir" ]]; then
-      #       echo "Error: Documentation directory not found." >&2
-      #       exit 1
-      #     fi
-      #     echo "docs-output-dir=$docsdir" >> $GITHUB_OUTPUT
+      - name: set reusable strings
+        id: strings
+        shell: bash
+        run: |-
+          docsdir=$(find dist-newstyle -type d -name "html")
+          if [[ -z "$docsdir" ]]; then
+            echo "Error: Documentation directory not found." >&2
+            exit 1
+          fi
+          echo "docs-output-dir=$docsdir" >> $GITHUB_OUTPUT
       # - name: publish docs
       #   uses: peaceiris/actions-gh-pages@v4
       #   with:

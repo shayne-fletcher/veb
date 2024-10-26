@@ -72,8 +72,15 @@ jobs:
       - run: cabal check
       - run: cabal build all
       - run: cabal test --test-option=--color=always --test-show-details=always test-suite:silly-3.1-test
-      - run: cabal haddock --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs' --haddock-hyperlink-source --haddock-quickjump --builddir=cabal haddock
-      - name: set reusable strings
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: haskell-actions/setup@v2
+        id: setup-haskell
+        with:
+          ghc-version: ghc-9.10.1
+    - run: cabal haddock --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs' --haddock-hyperlink-source --haddock-quickjump --builddir=cabal haddock
+    - name: set reusable strings
         id: strings
         shell: bash
         run: |-
@@ -83,8 +90,8 @@ jobs:
             exit 1
           fi
           echo "docs-output-dir=$docsdir" >> $GITHUB_OUTPUT
-      - name: publish docs
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ steps.strings.outputs.docs-output-dir}}
+    - name: publish docs
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ${{ steps.strings.outputs.docs-output-dir}}

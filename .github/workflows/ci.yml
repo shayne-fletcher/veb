@@ -83,8 +83,8 @@ jobs:
             exit 1
           fi
           echo "docs-output-dir=$docsdir" >> $GITHUB_OUTPUT
-      # - name: publish docs
-      #   uses: peaceiris/actions-gh-pages@v4
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #    publish_dir: ${{ steps.strings.outputs.docs-output-dir}}
+      - name: publish docs
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ steps.strings.outputs.docs-output-dir}}

@@ -8,7 +8,7 @@ maintainer: shaynefletcher@shaynefletcher.org
 build-type: Simple
 extra-source-files: README.md
 tested-with: GHC == 9.10.1
-description: Data structure research based on "Preserving order in a forest..."
+description: "Preserving order in a forest..."
 synopsis: Data structures
 category: Simple
 
